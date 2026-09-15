@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PMS · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <!-- `invisible` is removed by shell.js once the session is verified. -->
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Performance</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Objectives, KPIs, self-assessment and supervisor reviews.
+            </p>
+          </div>
+          <div>
+            <label for="period-select" class="sr-only">Review period</label>
+            <select
+              id="period-select"
+              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            ></select>
+          </div>
+        </div>
+
+        <div id="pms-tabs" class="mt-6 border-b border-slate-200">
+          <nav class="-mb-px flex gap-6" aria-label="PMS sections">
+            <button
+              id="tab-mine"
+              type="button"
+              data-tab="mine"
+              class="group inline-flex items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition"
+            >
+              My assessment
+            </button>
+            <button
+              id="tab-team"
+              type="button"
+              data-tab="team"
+              class="hidden group inline-flex items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition"
+            >
+              Team
+              <span
+                id="tab-team-badge"
+                class="hidden rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"
+              ></span>
+            </button>
+          </nav>
+        </div>
+
+        <p id="pms-error" class="mt-6 hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"></p>
+
+        <section id="panel-mine" class="mt-6 space-y-6"></section>
+        <section id="panel-team" class="mt-6 hidden space-y-6"></section>
+      </div>
+    </main>
+
+    <div id="confirm-backdrop" class="fixed inset-0 z-[60] hidden bg-slate-900/40">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
+          <h3 id="confirm-title" class="text-base font-semibold text-slate-900">Confirm</h3>
+          <p id="confirm-text" class="mt-2 text-sm text-slate-600"></p>
+          <div class="mt-6 flex justify-end gap-2">
+            <button
+              id="confirm-cancel"
+              type="button"
+              class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              id="confirm-ok"
+              type="button"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/pms.js"></script>
+  </body>
+</html>

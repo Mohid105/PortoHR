@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime and local scratch
+*.pid
+*.seed
+*.pid.lock
+devserver.tmp.js
+*.tmp.js
+tmp/
+temp/
+
+# Tests and build output
+coverage/
+.nyc_output/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

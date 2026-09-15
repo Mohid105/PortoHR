@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recruitment · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Recruitment</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Open a vacant seat, run the pipeline, approve the offer, then hire into Core HR.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="open-req" type="button" class="hidden rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              New requisition
+            </button>
+            <button id="open-candidate" type="button" class="hidden rounded-lg bg-[#2054C9] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173F9C]">
+              Add candidate
+            </button>
+          </div>
+        </div>
+
+        <div id="ats-tabs" class="mt-8 flex flex-wrap gap-2 border-b border-slate-200">
+          <button type="button" data-tab="requisitions" class="tab-btn -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">Requisitions</button>
+          <button type="button" data-tab="pipeline" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Pipeline</button>
+          <button type="button" data-tab="board" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Job board</button>
+          <button type="button" data-tab="onboarding" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Onboarding</button>
+        </div>
+
+        <section id="tab-requisitions" class="mt-6">
+          <div id="req-board" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+        <section id="tab-pipeline" class="mt-6 hidden">
+          <div id="pipeline-board" class="flex gap-4 overflow-x-auto pb-4"></div>
+        </section>
+        <section id="tab-board" class="mt-6 hidden">
+          <div id="job-board" class="grid gap-4 md:grid-cols-2"></div>
+        </section>
+        <section id="tab-onboarding" class="mt-6 hidden">
+          <div id="onboarding-list" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
+      </div>
+    </main>
+
+    <div id="panel-backdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40"></div>
+    <aside id="side-panel" class="fixed inset-y-0 right-0 z-50 w-full max-w-md translate-x-full overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-xl transition-transform duration-200">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="panel-title" class="text-lg font-semibold text-slate-900">—</h2>
+          <p id="panel-sub" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+        <button id="panel-close" type="button" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div id="panel-body" class="mt-6"></div>
+    </aside>
+
+    <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-[60] flex w-80 flex-col gap-2"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/recruitment.js"></script>
+  </body>
+</html>

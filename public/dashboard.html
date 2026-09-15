@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <!-- `invisible` is removed by shell.js once the session is verified, so an
+       unauthenticated visitor never sees the chrome before being redirected. -->
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <!-- Content -->
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Welcome back, <span id="greeting-name" class="font-medium text-slate-700">…</span>.
+            </p>
+          </div>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span id="api-status">Checking API…</span>
+          </span>
+        </div>
+
+        <div id="ess-widgets" class="mt-8 grid gap-4 lg:grid-cols-3"></div>
+
+        <div id="module-cards" class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <!-- one card per module the current role can reach -->
+        </div>
+
+        <div class="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <h2 class="text-sm font-semibold text-slate-900">Self-service hub</h2>
+          <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
+            Profile, leave, attendance, payslips and approvals live in the modules above. Sensitive
+            changes still route through maker-checker in Core HR.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payroll · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+    <style>
+      /* A payslip has to print cleanly: drop the app chrome and every control,
+         and let the sheet occupy the page on its own. */
+      @media print {
+        #sidebar,
+        #sidebar-backdrop,
+        #app-header,
+        #toasts,
+        .no-print {
+          display: none !important;
+        }
+        main {
+          padding: 0 !important;
+        }
+        body {
+          background: #fff !important;
+        }
+        #payslip-sheet {
+          border: 0 !important;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+          max-width: none !important;
+        }
+        .print-break-avoid {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <!-- `invisible` is removed by shell.js once the session is verified. -->
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <!-- ============================ LIST VIEW ============================ -->
+        <section id="view-list">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Payroll</h1>
+              <p id="page-subtitle" class="mt-1 text-sm text-slate-500">Monthly pay runs, payslips and closed-period arrears.</p>
+            </div>
+
+            <div id="admin-controls" class="hidden flex-wrap items-center gap-2">
+              <label for="run-month" class="sr-only">Pay period</label>
+              <input
+                id="run-month"
+                type="month"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              />
+              <button
+                id="btn-generate"
+                type="button"
+                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <svg id="generate-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span id="generate-text">Generate payroll batch</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="pay-tabs" class="mt-8 flex flex-wrap gap-2 border-b border-slate-200">
+            <button type="button" data-pay-tab="payslips" class="pay-tab -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">Payslips</button>
+            <button type="button" data-pay-tab="arrears" class="pay-tab -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Arrears</button>
+          </div>
+
+          <!-- Batch totals -->
+          <div id="batch-tiles" class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
+
+          <!-- Payslip register -->
+          <section id="panel-payslips" class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
+              <div>
+                <h2 class="text-sm font-semibold text-slate-900">Payslips</h2>
+                <p id="register-caption" class="mt-0.5 text-xs text-slate-500">—</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <label for="filter-month" class="sr-only">Filter by period</label>
+                <input
+                  id="filter-month"
+                  type="month"
+                  class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                />
+                <label for="filter-status" class="sr-only">Filter by status</label>
+                <select
+                  id="filter-status"
+                  class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                ></select>
+                <button
+                  id="btn-clear-filters"
+                  type="button"
+                  class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50">
+                  <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th scope="col" class="px-6 py-3.5">Employee</th>
+                    <th scope="col" class="px-6 py-3.5">Period</th>
+                    <th scope="col" class="px-6 py-3.5 text-right">Gross</th>
+                    <th scope="col" class="px-6 py-3.5 text-right">Overtime</th>
+                    <th scope="col" class="px-6 py-3.5 text-right">Deductions</th>
+                    <th scope="col" class="px-6 py-3.5 text-right">Net pay</th>
+                    <th scope="col" class="px-6 py-3.5">Status</th>
+                    <th scope="col" class="px-6 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="payslip-rows" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+
+            <div id="register-empty" class="hidden px-6 py-20 text-center">
+              <h3 id="empty-title" class="text-sm font-semibold text-slate-900">No payslips yet</h3>
+              <p id="empty-text" class="mx-auto mt-1 max-w-sm text-sm text-slate-500"></p>
+            </div>
+          </section>
+
+          <section id="view-arrears" class="mt-6 hidden space-y-6">
+          <form id="arrears-form" class="hidden grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-card sm:grid-cols-2 lg:grid-cols-5">
+            <label class="text-sm">
+              <span class="block text-xs font-medium text-slate-500">Employee</span>
+              <select id="arr-employee" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></select>
+            </label>
+            <label class="text-sm">
+              <span class="block text-xs font-medium text-slate-500">Closed period</span>
+              <input id="arr-month" type="month" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </label>
+            <label class="text-sm">
+              <span class="block text-xs font-medium text-slate-500">What-if basic (optional)</span>
+              <input id="arr-basic" type="number" min="0" step="0.01" placeholder="Leave blank for current contract" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </label>
+            <label class="text-sm lg:col-span-2">
+              <span class="block text-xs font-medium text-slate-500">Reason</span>
+              <input id="arr-reason" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Backdated increment from 1 July" />
+            </label>
+            <div class="sm:col-span-2 lg:col-span-5">
+              <button type="submit" class="rounded-lg bg-[#2054C9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173F9C]">Simulate — do not rewrite the payslip</button>
+            </div>
+          </form>
+          <p id="arrears-hint" class="text-sm text-slate-500">Closed payslips stay as they were paid. Any difference is stored here as arrears.</p>
+          <div id="arrears-board"></div>
+          </section>
+        </section>
+
+        <!-- ========================== PAYSLIP VIEW ========================== -->
+        <section id="view-payslip" class="hidden"></section>
+      </div>
+    </main>
+
+    <!-- Confirm dialog for destructive/approval actions -->
+    <div id="confirm-backdrop" class="fixed inset-0 z-[60] hidden bg-slate-900/40 no-print">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
+          <h3 id="confirm-title" class="text-base font-semibold text-slate-900">Are you sure?</h3>
+          <p id="confirm-text" class="mt-2 text-sm text-slate-600"></p>
+          <div class="mt-6 flex justify-end gap-2">
+            <button id="confirm-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              Cancel
+            </button>
+            <button id="confirm-ok" type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2 no-print"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/payroll.js"></script>
+  </body>
+</html>

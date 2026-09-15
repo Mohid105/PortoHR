@@ -1,0 +1,89 @@
+/* Design tokens from the Enterprise HRMS spec. Applied globally so every
+   existing slate/white screen follows the light/dark palettes without a
+   page-by-page rewrite. Shell chrome uses explicit colors on top of this. */
+
+:root {
+  --app-bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-alt: #101b33;
+  --primary: #2054c9;
+  --primary-hover: #173f9c;
+  --text: #1a1d23;
+  --muted: #5b6472;
+  --border: #e2e5ec;
+  --success: #1e9e5a;
+  --warning: #c77e12;
+  --danger: #c6323f;
+}
+
+html.dark {
+  --app-bg: #0f1218;
+  --surface: #1a1e27;
+  --surface-alt: #141922;
+  --primary: #5b8def;
+  --primary-hover: #7ba3f5;
+  --text: #edeef2;
+  --muted: #9aa3b2;
+  --border: #2a2f3a;
+  --success: #3fcb86;
+  --warning: #f0b94d;
+  --danger: #f1667a;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: var(--app-bg);
+  color: var(--text);
+}
+
+html.dark .bg-white {
+  background-color: var(--surface) !important;
+}
+html.dark .bg-white\/90 {
+  background-color: rgb(26 30 39 / 0.9) !important;
+}
+html.dark .bg-slate-50 {
+  background-color: var(--app-bg) !important;
+}
+html.dark .bg-slate-100 {
+  background-color: #222836 !important;
+}
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: var(--text) !important;
+}
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: var(--muted) !important;
+}
+html.dark .border-slate-200,
+html.dark .border-slate-100,
+html.dark .border-slate-300,
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #222836 !important;
+}
+html.dark .shadow-card,
+html.dark .shadow-lg,
+html.dark .shadow-md {
+  box-shadow: none !important;
+}
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #141922;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Status pills keep a tinted fill in both themes. */
+html.dark .bg-emerald-50 { background-color: rgb(63 203 134 / 0.15) !important; }
+html.dark .bg-amber-50 { background-color: rgb(240 185 77 / 0.15) !important; }
+html.dark .bg-sky-50 { background-color: rgb(93 169 224 / 0.15) !important; }
+html.dark .bg-red-50 { background-color: rgb(241 102 122 / 0.15) !important; }

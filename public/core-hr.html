@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Core HR · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <!-- `invisible` is removed by shell.js once the session is verified. -->
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <!-- ============================ DIRECTORY ============================ -->
+      <section id="view-list" class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Core HR</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Person, employment and position masters with effective-dated history. High-risk org and pay changes wait for a checker.
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2 text-sm">
+              <a href="#" data-nav-view="list" class="rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white">Directory</a>
+              <a href="#/org" data-nav-view="org" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">Organization</a>
+              <a href="#/reports" data-nav-view="reports" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">Reports</a>
+            </div>
+          </div>
+          <button
+            id="btn-new-employee"
+            type="button"
+            class="hidden items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Create employee
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-card">
+          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="relative">
+              <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                id="filter-q"
+                type="search"
+                placeholder="Search name, code, email…"
+                class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              />
+            </div>
+            <select id="filter-department" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+              <option value="">All departments</option>
+            </select>
+            <select id="filter-status" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+              <option value="">All statuses</option>
+            </select>
+            <select id="filter-shift" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+              <option value="">All shifts</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="alerts-strip" class="mt-6 hidden"></div>
+        <div id="changes-queue" class="mt-6 hidden"></div>
+
+        <!-- Table -->
+        <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50">
+                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th scope="col" class="px-6 py-3.5">Employee</th>
+                  <th scope="col" class="px-6 py-3.5">Department</th>
+                  <th scope="col" class="px-6 py-3.5">Team</th>
+                  <th scope="col" class="px-6 py-3.5">Shift</th>
+                  <th scope="col" class="px-6 py-3.5">Rest days</th>
+                  <th scope="col" class="px-6 py-3.5">Status</th>
+                  <th scope="col" class="px-6 py-3.5 text-right">Gross</th>
+                  <th scope="col" class="relative px-6 py-3.5"><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody id="employee-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+
+          <div id="table-empty" class="hidden px-6 py-16 text-center">
+            <h3 class="text-sm font-semibold text-slate-900">No employees found</h3>
+            <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+              Try clearing the filters, or create the first employee record.
+            </p>
+          </div>
+
+          <div id="table-error" class="hidden px-6 py-16 text-center">
+            <h3 class="text-sm font-semibold text-red-700">Could not load employees</h3>
+            <p id="table-error-text" class="mx-auto mt-1 max-w-sm text-sm text-slate-500"></p>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-6 py-3">
+            <p id="table-summary" class="text-xs text-slate-500">Loading…</p>
+            <div class="flex items-center gap-2">
+              <button id="page-prev" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                Previous
+              </button>
+              <button id="page-next" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ PROFILE ============================ -->
+      <section id="view-profile" class="mx-auto hidden max-w-7xl"></section>
+
+      <section id="view-org" class="mx-auto hidden max-w-7xl"></section>
+      <section id="view-reports" class="mx-auto hidden max-w-7xl"></section>
+    </main>
+
+    <!-- ======================= CREATE / EDIT SLIDE-OVER ======================= -->
+    <div id="panel-backdrop" class="fixed inset-0 z-40 hidden bg-slate-900/30 backdrop-blur-[1px]"></div>
+
+    <aside
+      id="panel"
+      class="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl translate-x-full flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300"
+      aria-labelledby="panel-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-6">
+        <div>
+          <h2 id="panel-title" class="text-base font-semibold tracking-tight">Create employee</h2>
+          <p id="panel-subtitle" class="text-xs text-slate-500">Add a new record to the directory</p>
+        </div>
+        <button id="panel-close" type="button" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close panel">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="employee-form" class="flex min-h-0 flex-1 flex-col" novalidate>
+        <div class="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+          <div id="form-error" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700"></div>
+
+          <!-- Basic info -->
+          <fieldset class="space-y-4">
+            <legend class="text-xs font-semibold uppercase tracking-wider text-slate-400">Basic information</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="f-employeeCode" class="block text-sm font-medium text-slate-700">Employee code <span class="text-red-500">*</span></label>
+                <input id="f-employeeCode" name="employeeCode" type="text" placeholder="PH-1009" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="employeeCode"></p>
+              </div>
+              <div>
+                <label for="f-email" class="block text-sm font-medium text-slate-700">Work email <span class="text-red-500">*</span></label>
+                <input id="f-email" name="email" type="email" placeholder="name@portohr.test" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="email"></p>
+              </div>
+              <div>
+                <label for="f-firstName" class="block text-sm font-medium text-slate-700">First name <span class="text-red-500">*</span></label>
+                <input id="f-firstName" name="firstName" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="firstName"></p>
+              </div>
+              <div>
+                <label for="f-lastName" class="block text-sm font-medium text-slate-700">Last name <span class="text-red-500">*</span></label>
+                <input id="f-lastName" name="lastName" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="lastName"></p>
+              </div>
+              <div>
+                <label for="f-preferredName" class="block text-sm font-medium text-slate-700">Preferred name</label>
+                <input id="f-preferredName" name="preferredName" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div>
+                <label for="f-fatherName" class="block text-sm font-medium text-slate-700">Father / guardian name</label>
+                <input id="f-fatherName" name="fatherName" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div>
+                <label for="f-phone" class="block text-sm font-medium text-slate-700">Phone</label>
+                <input id="f-phone" name="phone" type="tel" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="phone"></p>
+              </div>
+              <div>
+                <label for="f-dateOfBirth" class="block text-sm font-medium text-slate-700">Date of birth</label>
+                <input id="f-dateOfBirth" name="dateOfBirth" type="date" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="dateOfBirth"></p>
+              </div>
+              <div>
+                <label for="f-gender" class="block text-sm font-medium text-slate-700">Gender</label>
+                <select id="f-gender" name="gender" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">Not specified</option></select>
+              </div>
+              <div>
+                <label for="f-nationality" class="block text-sm font-medium text-slate-700">Nationality</label>
+                <select id="f-nationality" name="nationality" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">Not specified</option></select>
+              </div>
+              <div>
+                <label for="f-maritalStatus" class="block text-sm font-medium text-slate-700">Marital status</label>
+                <select id="f-maritalStatus" name="maritalStatus" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">Not specified</option></select>
+              </div>
+              <div>
+                <label for="f-cnic" class="block text-sm font-medium text-slate-700">CNIC / National ID</label>
+                <input id="f-cnic" name="cnic" type="text" placeholder="35202-1234567-1" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="f-address" class="block text-sm font-medium text-slate-700">Address</label>
+                <input id="f-address" name="address" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="address"></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Placement -->
+          <fieldset class="space-y-4 border-t border-slate-100 pt-6">
+            <legend class="text-xs font-semibold uppercase tracking-wider text-slate-400">Placement</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label for="f-position" class="block text-sm font-medium text-slate-700">Approved position</label>
+                <select id="f-position" name="position" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                  <option value="">Create from designation / team</option>
+                </select>
+                <p class="mt-1 text-xs text-slate-500">An active employee occupies one approved seat. Team, grade and reporting line come from the position.</p>
+              </div>
+              <div>
+                <label for="f-designation" class="block text-sm font-medium text-slate-700">Designation <span class="text-red-500">*</span></label>
+                <input id="f-designation" name="designation" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="designation"></p>
+              </div>
+              <div>
+                <label for="f-department" class="block text-sm font-medium text-slate-700">Department <span class="text-red-500">*</span></label>
+                <select id="f-department" name="department" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">Select…</option></select>
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="department"></p>
+              </div>
+              <div>
+                <label for="f-team" class="block text-sm font-medium text-slate-700">Team</label>
+                <input id="f-team" name="team" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="team"></p>
+              </div>
+              <div>
+                <label for="f-reportsTo" class="block text-sm font-medium text-slate-700">Reports to</label>
+                <select id="f-reportsTo" name="reportsTo" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">No manager</option></select>
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="reportsTo"></p>
+              </div>
+              <div>
+                <label for="f-employmentType" class="block text-sm font-medium text-slate-700">Employment type</label>
+                <select id="f-employmentType" name="employmentType" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></select>
+              </div>
+              <div>
+                <label for="f-employmentStatus" class="block text-sm font-medium text-slate-700">Status</label>
+                <select id="f-employmentStatus" name="employmentStatus" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></select>
+              </div>
+              <div>
+                <label for="f-location" class="block text-sm font-medium text-slate-700">Location</label>
+                <select id="f-location" name="location" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"><option value="">Select…</option></select>
+              </div>
+              <div>
+                <label for="f-employeeCategory" class="block text-sm font-medium text-slate-700">Employee category</label>
+                <select id="f-employeeCategory" name="employeeCategory" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></select>
+              </div>
+              <div>
+                <label for="f-event" class="block text-sm font-medium text-slate-700">Personnel event</label>
+                <select id="f-event" name="event" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                  <option value="">Infer from fields</option>
+                </select>
+              </div>
+              <div>
+                <label for="f-eventReason" class="block text-sm font-medium text-slate-700">Event reason</label>
+                <input id="f-eventReason" name="eventReason" type="text" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div>
+                <label for="f-dateOfJoining" class="block text-sm font-medium text-slate-700">Date of joining <span class="text-red-500">*</span></label>
+                <input id="f-dateOfJoining" name="dateOfJoining" type="date" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="dateOfJoining"></p>
+              </div>
+              <div>
+                <label for="f-effectiveFrom" class="block text-sm font-medium text-slate-700">Assignment effective from</label>
+                <input id="f-effectiveFrom" name="effectiveFrom" type="date" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 text-xs text-slate-500">Department, team, shift, role and salary write a new dated row from this day.</p>
+              </div>
+              <div class="sm:col-span-2">
+                <label for="f-reason" class="block text-sm font-medium text-slate-700">Change reason</label>
+                <input id="f-reason" name="reason" type="text" maxlength="300" placeholder="Why this assignment is changing" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Schedule -->
+          <fieldset class="space-y-4 border-t border-slate-100 pt-6">
+            <legend class="text-xs font-semibold uppercase tracking-wider text-slate-400">Schedule</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="f-shiftType" class="block text-sm font-medium text-slate-700">Shift type</label>
+                <select id="f-shiftType" name="shiftType" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></select>
+                <p id="shift-hint" class="mt-1 text-xs text-slate-500"></p>
+              </div>
+              <div>
+                <label for="f-annualLeaveDays" class="block text-sm font-medium text-slate-700">Annual leave (days)</label>
+                <input id="f-annualLeaveDays" name="annualLeaveDays" type="number" min="0" max="365" step="1" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="annualLeaveDays"></p>
+              </div>
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-slate-700">Rest days</span>
+              <p class="mt-0.5 text-xs text-slate-500">Pick up to three days off per week.</p>
+              <div id="rest-days" class="mt-2 flex flex-wrap gap-2"></div>
+              <p class="mt-1 hidden text-xs text-red-600" data-error-for="restDays"></p>
+            </div>
+          </fieldset>
+
+          <!-- Compensation -->
+          <fieldset class="space-y-4 border-t border-slate-100 pt-6">
+            <legend class="text-xs font-semibold uppercase tracking-wider text-slate-400">Compensation</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="f-currency" class="block text-sm font-medium text-slate-700">Currency</label>
+                <select id="f-currency" name="currency" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></select>
+              </div>
+              <div>
+                <label for="f-baseSalary" class="block text-sm font-medium text-slate-700">Base salary <span class="text-red-500">*</span></label>
+                <input id="f-baseSalary" name="baseSalary" type="number" min="0" step="0.01" placeholder="0.00" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <p class="mt-1 hidden text-xs text-red-600" data-error-for="compensation.baseSalary"></p>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="block text-sm font-medium text-slate-700">Fixed allowances</span>
+                <button id="add-allowance" type="button" class="text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline">
+                  + Add allowance
+                </button>
+              </div>
+              <div id="allowance-rows" class="mt-2 space-y-2"></div>
+              <p id="allowance-empty" class="mt-2 text-xs text-slate-400">No allowances added.</p>
+              <p class="mt-1 hidden text-xs text-red-600" data-error-for="compensation.fixedAllowances"></p>
+              <div class="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                <span class="text-slate-600">Gross monthly</span>
+                <span id="gross-preview" class="font-semibold text-slate-900">—</span>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <button id="panel-cancel" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            Cancel
+          </button>
+          <button id="panel-submit" type="submit" class="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
+            <svg id="panel-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span id="panel-submit-text">Save employee</span>
+          </button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- ============================ CONFIRM DELETE ============================ -->
+    <div id="confirm-backdrop" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/40 p-4">
+      <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl" role="alertdialog" aria-modal="true">
+        <h3 class="text-base font-semibold text-slate-900">Remove employee</h3>
+        <p id="confirm-text" class="mt-2 text-sm text-slate-500"></p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button id="confirm-cancel" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            Cancel
+          </button>
+          <button id="confirm-accept" type="button" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="decision-backdrop" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/40 p-4">
+      <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl" role="dialog" aria-modal="true">
+        <h3 id="decision-title" class="text-base font-semibold text-slate-900">Confirm change</h3>
+        <p id="decision-text" class="mt-2 text-sm text-slate-500"></p>
+        <div class="mt-4">
+          <label for="decision-note" class="block text-sm font-medium text-slate-700">Note</label>
+          <textarea id="decision-note" rows="3" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"></textarea>
+          <p id="decision-error" class="mt-1 hidden text-xs text-red-600"></p>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button id="decision-cancel" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            Cancel
+          </button>
+          <button id="decision-ok" type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ TOASTS ============================ -->
+    <div id="record-backdrop" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/40 p-4">
+      <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <h3 id="record-title" class="text-base font-semibold text-slate-900">Add record</h3>
+        <form id="record-form" class="mt-4 space-y-3"></form>
+        <p id="record-error" class="mt-2 hidden text-xs text-red-600"></p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button id="record-cancel" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
+          <button id="record-ok" type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2"></div>
+
+    <style>
+      /* Tailwind has no built-in variant for aria-invalid, and the invalid ring is
+         the one style the form toggles at runtime. */
+      [aria-invalid='true'] {
+        border-color: rgb(248 113 113);
+      }
+      [aria-invalid='true']:focus {
+        border-color: rgb(239 68 68);
+        --tw-ring-color: rgb(239 68 68 / 0.1);
+      }
+    </style>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/core-hr.js"></script>
+  </body>
+</html>

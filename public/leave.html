@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leave · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Leave</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Apply against your balances, see the team calendar, and clear the approval queue.
+            </p>
+          </div>
+          <button
+            id="apply-open"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg bg-[#2054C9] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#173F9C]"
+          >
+            Apply for leave
+          </button>
+        </div>
+
+        <div id="balance-grid" class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"></div>
+
+        <div class="mt-8 flex flex-wrap gap-2 border-b border-slate-200" id="leave-tabs">
+          <button type="button" data-tab="mine" class="tab-btn -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">
+            My requests
+          </button>
+          <button type="button" data-tab="calendar" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-800">
+            Team calendar
+          </button>
+          <button type="button" data-tab="queue" id="queue-tab" class="tab-btn hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-800">
+            Approvals
+            <span id="queue-count" class="ml-1.5 hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-800">0</span>
+          </button>
+        </div>
+
+        <section id="tab-mine" class="mt-6">
+          <div id="mine-list" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
+
+        <section id="tab-calendar" class="mt-6 hidden">
+          <div class="mb-4 flex items-center justify-between">
+            <button id="cal-prev" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Previous</button>
+            <h2 id="cal-label" class="text-sm font-semibold text-slate-900">—</h2>
+            <button id="cal-next" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Next</button>
+          </div>
+          <div id="calendar-board" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
+
+        <section id="tab-queue" class="mt-6 hidden">
+          <div id="queue-list" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
+      </div>
+    </main>
+
+    <div id="apply-backdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40"></div>
+    <aside id="apply-panel" class="fixed inset-y-0 right-0 z-50 w-full max-w-md translate-x-full overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-xl transition-transform duration-200">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900">Apply for leave</h2>
+          <p class="mt-1 text-sm text-slate-500">Rest days and public holidays are skipped automatically.</p>
+        </div>
+        <button id="apply-close" type="button" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <form id="apply-form" class="mt-6 space-y-4" novalidate>
+        <div>
+          <label for="leaveType" class="block text-sm font-medium text-slate-700">Leave type</label>
+          <select id="leaveType" name="leaveType" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+          <p id="leaveType-hint" class="mt-1 text-xs text-slate-500"></p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="fromDate" class="block text-sm font-medium text-slate-700">From</label>
+            <input id="fromDate" name="fromDate" type="date" required class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label for="toDate" class="block text-sm font-medium text-slate-700">To</label>
+            <input id="toDate" name="toDate" type="date" required class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label for="halfDay" class="block text-sm font-medium text-slate-700">Day length</label>
+          <select id="halfDay" name="halfDay" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+        </div>
+        <div>
+          <label for="reason" class="block text-sm font-medium text-slate-700">Reason</label>
+          <textarea id="reason" name="reason" rows="4" required minlength="8" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Why you need the time off"></textarea>
+        </div>
+        <p id="apply-error" class="hidden text-sm text-red-600"></p>
+        <button id="apply-submit" type="submit" class="w-full rounded-lg bg-[#2054C9] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173F9C]">
+          Submit request
+        </button>
+      </form>
+    </aside>
+
+    <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-[60] flex w-80 flex-col gap-2"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/leave.js"></script>
+  </body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+  </head>
+  <!-- `invisible` is removed by shell.js once the session is verified. -->
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Attendance</h1>
+            <p class="mt-1 text-sm text-slate-500">
+              Clock in and out, and review your monthly time log.
+            </p>
+          </div>
+        </div>
+
+        <!-- ===================== CLOCK + LEAVE ===================== -->
+        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+          <!-- Clock card -->
+          <section class="rounded-xl border border-slate-200 bg-white p-8 shadow-card lg:col-span-2">
+            <div class="flex flex-wrap items-start justify-between gap-6">
+              <div>
+                <p id="clock-date" class="text-sm text-slate-500">—</p>
+                <p id="clock-time" class="mt-1 text-5xl font-semibold tracking-tight tabular-nums text-slate-900">
+                  --:--:--
+                </p>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <span id="clock-status" class="inline-flex items-center whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                    Loading…
+                  </span>
+                  <span id="clock-shift" class="text-xs text-slate-500"></span>
+                </div>
+              </div>
+
+              <div class="flex flex-col items-stretch gap-3">
+                <button
+                  id="clock-button"
+                  type="button"
+                  class="flex min-w-[13rem] items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled
+                >
+                  <svg id="clock-spinner" class="hidden h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                  <span id="clock-button-text">Loading…</span>
+                </button>
+                <p id="clock-hint" class="max-w-[13rem] text-center text-xs text-slate-500"></p>
+                <p id="punch-queue" class="hidden max-w-[13rem] text-center text-xs font-medium text-amber-700"></p>
+              </div>
+            </div>
+
+            <dl class="mt-8 grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 sm:grid-cols-4">
+              <div>
+                <dt class="text-xs text-slate-500">Clocked in</dt>
+                <dd id="today-in" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500">Clocked out</dt>
+                <dd id="today-out" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500">Worked today</dt>
+                <dd id="today-hours" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500">Shift owes</dt>
+                <dd id="today-expected" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- Leave balance widget -->
+          <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
+            <div class="flex items-center justify-between">
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Leave balance</h2>
+              <a href="/leave.html" class="text-xs font-medium text-[#2054C9] hover:underline">Manage leave</a>
+            </div>
+
+            <p class="mt-5 flex items-baseline gap-1.5">
+              <span id="leave-available" class="text-4xl font-semibold tracking-tight text-slate-900">—</span>
+              <span class="text-sm text-slate-500">days available</span>
+            </p>
+
+            <div class="mt-5">
+              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div id="leave-bar" class="h-full rounded-full bg-slate-900 transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span><span id="leave-taken" class="font-medium text-slate-700">—</span> taken</span>
+                <span><span id="leave-entitlement" class="font-medium text-slate-700">—</span> entitlement</span>
+              </div>
+            </div>
+
+            <dl class="mt-6 space-y-3 border-t border-slate-100 pt-5">
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-slate-600">Taken this year</dt>
+                <dd id="leave-taken-2" class="text-sm font-semibold text-slate-900">—</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-slate-600">On leave this month</dt>
+                <dd id="leave-month" class="text-sm font-semibold text-slate-900">—</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt class="text-sm text-slate-600">Pending requests</dt>
+                <dd id="leave-pending" class="text-sm font-semibold text-slate-900">—</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <!-- ===================== MONTH STATS ===================== -->
+        <div id="stat-tiles" class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
+
+        <!-- ===================== MONTH LOG ===================== -->
+        <section class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Monthly log</h2>
+              <p id="log-subject" class="mt-0.5 text-xs text-slate-500">—</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <select
+                id="employee-picker"
+                class="hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              ></select>
+
+              <div class="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-0.5">
+                <button id="month-prev" type="button" class="rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Previous month">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                </button>
+                <span id="month-label" class="min-w-[7.5rem] text-center text-sm font-medium text-slate-700">—</span>
+                <button id="month-next" type="button" class="rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Next month">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-100 bg-slate-50/60 px-6 py-2.5 text-xs text-slate-500">
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Overtime</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span>Short day or absence</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Paid leave</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-slate-300"></span>Rest day</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50">
+                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th scope="col" class="px-6 py-3.5">Date</th>
+                  <th scope="col" class="px-6 py-3.5">Time in</th>
+                  <th scope="col" class="px-6 py-3.5">Time out</th>
+                  <th scope="col" class="px-6 py-3.5 text-right">Worked</th>
+                  <th scope="col" class="px-6 py-3.5 text-right">Overtime</th>
+                  <th scope="col" class="px-6 py-3.5">Status</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+
+          <div id="log-error" class="hidden px-6 py-16 text-center">
+            <h3 class="text-sm font-semibold text-red-700">Could not load attendance</h3>
+            <p id="log-error-text" class="mx-auto mt-1 max-w-sm text-sm text-slate-500"></p>
+          </div>
+
+          <div class="border-t border-slate-200 px-6 py-3">
+            <p id="log-summary" class="text-xs text-slate-500">Loading…</p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/shell.js"></script>
+    <script src="/js/attendance.js"></script>
+  </body>
+</html>
