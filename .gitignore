@@ -36,3 +36,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Local credentials kept in the project folder (a GitHub token and an SSH public key). Never commit or upload.
+key
+key.pub
+
+# Local MongoDB dumps and logs
+dump/
+*.bak

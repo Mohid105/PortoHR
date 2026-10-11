@@ -4,56 +4,97 @@
  * Payroll rules, gathered in one place so that changing a statutory rate never
  * means hunting through the calculation engine.
  *
- * The tax bands and contribution rates below are ILLUSTRATIVE. They are shaped
- * like a real progressive income tax and a capped social security contribution,
- * but they are not any particular country's schedule — replace them with your
- * jurisdiction's before running real payroll.
+ * The profile below follows a Pakistani fixed-rate (monthly salaried) payroll:
+ * a 26-day month, double-rate overtime, gazetted-holiday work paid separately,
+ * EOBI and provident-fund contributions, and slab-based salaried income tax.
+ * Verified against a real salary sheet and payslip: salary / 26 per day,
+ * per day / 8 per hour, and overtime at 2x that hourly rate.
+ *
+ * STATUTORY FIGURES (tax slabs, EOBI) change with every Finance Act. They are
+ * the best known values, not legal advice — confirm them with your tax adviser
+ * before running real payroll, and edit them here (nothing else hard-codes them).
  */
 
 /** Bumped whenever the rules below change, and stamped onto every payslip. */
-const ENGINE_VERSION = '1.0.0';
+const ENGINE_VERSION = '2.0.0';
 
 const PAYROLL = {
-  /** Statutory multiplier applied to the hourly rate for overtime hours. */
-  overtimeMultiplier: 1.5,
+  /**
+   * EOBI, provident fund and the income-tax slabs are denominated in this
+   * currency. An employee paid in another currency gets none of them (with a
+   * note on the payslip) rather than a wrong figure.
+   */
+  statutoryCurrency: 'PKR',
+
+  /** Multiplier applied to the hourly rate for overtime hours. */
+  overtimeMultiplier: 2,
+
+  /**
+   * Categories that earn no overtime or gazetted-holiday pay: salaried
+   * executives and management. An employee with no category set is treated as
+   * eligible, so existing records keep behaving as before.
+   */
+  overtimeExcludedCategories: ['executive', 'management'],
+
+  /** Hours worked on a gazetted (public) holiday are paid at this multiple of the hourly rate. */
+  gazettedHolidayMultiplier: 2,
 
   /**
    * How the hourly rate is derived from the daily rate.
    *  'shift' — divide by the hours the employee's own shift owes (7.5 or 8).
    *  'fixed' — divide by `standardHoursPerDay` for everyone.
-   * 'shift' is the accurate choice: paying a 7.5-hour employee's overtime at a
-   * rate divided by 8 would quietly underpay them by 6.25%.
    */
-  hourlyRateBasis: 'shift',
+  hourlyRateBasis: 'fixed',
   standardHoursPerDay: 8,
 
   /**
-   * The daily rate divides a full month's salary by the days the employee is
-   * actually rostered to work that month, so a 20-working-day February and a
-   * 23-working-day March each produce a correct day's pay.
+   * How the daily rate is derived from a month's salary.
+   *  'fixed_divisor' — always divide by `monthDivisor` (26): each absent day
+   *                    costs 1/26 of the month whatever the calendar says.
+   *  'working_days'  — divide by the days actually rostered that month.
    */
-  perDayBasis: 'working_days',
+  perDayBasis: 'fixed_divisor',
+  monthDivisor: 26,
 
+  /** EOBI employee contribution: a flat rate on a fixed wage base. */
   socialSecurity: {
-    label: 'Social security',
-    rate: 0.07,
-    /** Contributions are only charged on earnings up to this monthly amount. */
-    monthlyCeiling: 6000,
+    label: 'EOBI (employee)',
+    rate: 0.01,
+    /** The wage the contribution is calculated on (not a cap on pay). */
+    monthlyCeiling: 31000,
+    /** When true the contribution is rate x ceiling for anyone earning above zero. */
+    flatOnCeiling: true,
+  },
+
+  /** Employee provident-fund contribution, for employees enrolled in the scheme. */
+  providentFund: {
+    label: 'Provident fund (employee)',
+    employeeRate: 0.1,
+    /** The contribution is taken off before income tax is worked out. */
+    taxDeductible: true,
   },
 
   incomeTax: {
     label: 'Income tax',
     /**
-     * Progressive annual bands. Each band's rate applies only to the portion of
-     * income falling inside it. `upTo: null` is the top, open-ended band.
-     * Monthly tax is one twelfth of the tax on the annualised figure.
+     * The supplied worker payslip shows no tax despite roughly 160,000 earned in
+     * the month, because overtime and gazetted-holiday pay were left out of the
+     * tax base. Set to false to tax them as well.
+     */
+    excludeOvertime: true,
+    /**
+     * Progressive annual bands (salaried individuals, tax year 2025-26). Each
+     * band's rate applies only to the portion of income inside it.
+     * `upTo: null` is the open-ended top band. A surcharge for very high
+     * earners is not modelled. Monthly tax is one twelfth of the annual figure.
      */
     annualBands: [
-      { upTo: 12000, rate: 0 },
-      { upTo: 24000, rate: 0.05 },
-      { upTo: 48000, rate: 0.1 },
-      { upTo: 96000, rate: 0.2 },
-      { upTo: null, rate: 0.3 },
+      { upTo: 600000, rate: 0 },
+      { upTo: 1200000, rate: 0.01 },
+      { upTo: 2200000, rate: 0.11 },
+      { upTo: 3200000, rate: 0.23 },
+      { upTo: 4100000, rate: 0.3 },
+      { upTo: null, rate: 0.35 },
     ],
   },
 };
@@ -97,6 +138,9 @@ function metaPayload() {
   return {
     engineVersion: ENGINE_VERSION,
     overtimeMultiplier: PAYROLL.overtimeMultiplier,
+    gazettedHolidayMultiplier: PAYROLL.gazettedHolidayMultiplier,
+    monthDivisor: PAYROLL.perDayBasis === 'fixed_divisor' ? PAYROLL.monthDivisor : null,
+    providentFund: PAYROLL.providentFund,
     hourlyRateBasis: PAYROLL.hourlyRateBasis,
     standardHoursPerDay: PAYROLL.standardHoursPerDay,
     socialSecurity: PAYROLL.socialSecurity,

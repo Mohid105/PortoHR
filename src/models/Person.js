@@ -46,6 +46,7 @@ const personSchema = new mongoose.Schema(
     },
     preferredName: { type: String, trim: true, default: '', maxlength: 80 },
     fatherName: { type: String, trim: true, default: '', maxlength: 80 },
+    bloodGroup: { type: String, enum: ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], default: '' },
     dateOfBirth: { type: Date, default: null },
     gender: { type: String, enum: [...GENDERS, ''], default: '' },
     maritalStatus: { type: String, enum: [...MARITAL_STATUSES, ''], default: '' },

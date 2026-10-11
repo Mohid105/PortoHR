@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema(
     reportsTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date, default: null },
+    mustChangePassword: { type: Boolean, default: false },
+    failedLogins: { type: Number, default: 0 },
+    lockedUntil: { type: Date, default: null },
+    /** Bumped to end every session this account has open, on every device. */
+    tokenVersion: { type: Number, default: 0 },
+    passwordChangedAt: { type: Date, default: null },
   },
   {
     timestamps: true,
@@ -62,6 +68,7 @@ userSchema.virtual('fullName').get(function fullName() {
 userSchema.pre('save', async function hashPassword(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
+  if (!this.isNew) this.passwordChangedAt = new Date();
   return next();
 });
 

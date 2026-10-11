@@ -111,6 +111,35 @@ async function ensureDepartmentTree() {
   }
 }
 
+/** Departments are whatever the org tree says they are; HR can add more at any time. */
+async function departmentNames() {
+  const units = await OrgUnit.find({ type: 'department', status: 'active' }).select('name').sort({ name: 1 });
+  const names = units.map((unit) => unit.name);
+  return names.length ? names : DEPARTMENTS.slice();
+}
+
+/** Locations HR has configured, plus any already in use, plus the starter set. */
+async function locationNames() {
+  const LookupValue = require('../models/LookupValue');
+  const { LOCATIONS } = require('../config/hr');
+  const [configured, used] = await Promise.all([
+    LookupValue.find({ category: 'location', active: true }).select('label'),
+    Employee.distinct('location'),
+  ]);
+  const names = new Set(LOCATIONS);
+  configured.forEach((row) => names.add(row.label));
+  used.filter(Boolean).forEach((name) => names.add(name));
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
+}
+
+async function assertDepartment(name) {
+  if (name === undefined || name === null || name === '') return;
+  const names = await departmentNames();
+  if (!names.includes(String(name))) {
+    throw ApiError.badRequest(`"${name}" is not a department in the organization tree. Add it under Admin → Departments first.`);
+  }
+}
+
 async function findDepartmentUnit(departmentName) {
   return OrgUnit.findOne({ type: 'department', name: departmentName, status: 'active' });
 }
@@ -181,7 +210,9 @@ async function findOrCreateSeatForEmployee(employee) {
   if (occupied && occupied.positionCode) return occupied;
 
   const job = await findOrCreateJob(employee.designation);
-  const grade = await Grade.findOne({ code: gradeForDesignation(employee.designation, employee.department) });
+  // A grade chosen by HR wins; the title-based guess is only for records that have none.
+  const chosen = employee.grade ? await Grade.findOne({ code: String(employee.grade).toUpperCase() }) : null;
+  const grade = chosen || (await Grade.findOne({ code: gradeForDesignation(employee.designation, employee.department) }));
   const team = await findOrCreateTeam(employee.department, employee.team);
   const code = `POS-${String(employee.employeeCode || '').replace(/[^0-9]/g, '') || Date.now().toString().slice(-5)}`;
 
@@ -235,6 +266,131 @@ async function vacatePosition(positionId, employeeId) {
   position.incumbent = null;
   if (position.status === 'filled') position.status = 'vacant';
   await position.save();
+}
+
+/* ---------------- Department management ---------------- */
+
+const escapeRegex = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+async function nextCode(type, prefix) {
+  const rows = await OrgUnit.find({ type }).select('code');
+  const max = rows.reduce((top, row) => {
+    const match = /(\d+)$/.exec(row.code || '');
+    return match ? Math.max(top, Number(match[1])) : top;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(5, '0')}`;
+}
+
+async function listDepartments() {
+  await ensureOrganization();
+  const [departments, clusters, employees] = await Promise.all([
+    OrgUnit.find({ type: 'department' }).sort({ name: 1 }),
+    OrgUnit.find({ type: 'cluster' }).sort({ name: 1 }),
+    Employee.aggregate([
+      { $match: { employmentStatus: { $in: ['probation', 'confirmed', 'notice_period'] } } },
+      { $group: { _id: '$department', count: { $sum: 1 } } },
+    ]),
+  ]);
+  const headcount = new Map(employees.map((row) => [row._id, row.count]));
+  const clusterName = new Map(clusters.map((row) => [String(row._id), row.name]));
+  return {
+    clusters: clusters.map(presentUnit),
+    departments: departments.map((unit) => ({
+      ...presentUnit(unit),
+      clusterName: clusterName.get(String(unit.parent)) || '',
+      headcount: headcount.get(unit.name) || 0,
+    })),
+  };
+}
+
+async function createDepartment(body) {
+  const name = String(body.name || '').trim();
+  if (!name) throw ApiError.badRequest('Department name is required');
+  if (await OrgUnit.findOne({ type: 'department', name: new RegExp(`^${escapeRegex(name)}$`, 'i') })) {
+    throw ApiError.conflict('A department with this name already exists');
+  }
+
+  let cluster = null;
+  if (body.cluster) {
+    cluster = await OrgUnit.findOne({ type: 'cluster', _id: body.cluster });
+    if (!cluster) throw ApiError.badRequest('Choose an existing cluster');
+  } else {
+    const clusterLabel = String(body.clusterName || '').trim() || 'Corporate Services';
+    cluster = await OrgUnit.findOne({ type: 'cluster', name: clusterLabel });
+    if (!cluster) {
+      cluster = await OrgUnit.create({
+        type: 'cluster',
+        code: await nextCode('cluster', 'CLS'),
+        hierarchyCode: `C${(await OrgUnit.countDocuments({ type: 'cluster' })) + 1}`,
+        name: clusterLabel,
+        status: 'active',
+      });
+    }
+  }
+
+  const siblings = await OrgUnit.countDocuments({ type: 'department', parent: cluster._id });
+  const department = await OrgUnit.create({
+    type: 'department',
+    code: await nextCode('department', 'DEP'),
+    hierarchyCode: `${cluster.hierarchyCode}${siblings + 1}`,
+    name,
+    parent: cluster._id,
+    status: 'active',
+  });
+  await OrgUnit.create({
+    type: 'team',
+    code: await nextCode('team', 'TEAM'),
+    hierarchyCode: `${department.hierarchyCode}1`,
+    name: `${name} General`,
+    teamType: 'general',
+    parent: department._id,
+    status: 'active',
+  });
+  return department;
+}
+
+/** Names are copied onto people and assignments, so a rename must follow them. */
+async function updateDepartment(id, body) {
+  const unit = await OrgUnit.findOne({ _id: id, type: 'department' });
+  if (!unit) throw ApiError.notFound('Department not found');
+  const Assignment = require('../models/Assignment');
+  const Requisition = require('../models/Requisition');
+  const oldName = unit.name;
+
+  if (body.name !== undefined) {
+    const name = String(body.name).trim();
+    if (!name) throw ApiError.badRequest('Department name is required');
+    const clash = await OrgUnit.findOne({
+      type: 'department',
+      _id: { $ne: unit._id },
+      name: new RegExp(`^${escapeRegex(name)}$`, 'i'),
+    });
+    if (clash) throw ApiError.conflict('A department with this name already exists');
+    unit.name = name;
+  }
+
+  if (body.status !== undefined) {
+    if (!['active', 'inactive'].includes(body.status)) throw ApiError.badRequest('Status must be active or inactive');
+    if (body.status === 'inactive') {
+      const staff = await Employee.countDocuments({
+        department: oldName,
+        employmentStatus: { $in: ['probation', 'confirmed', 'notice_period'] },
+      });
+      if (staff) throw ApiError.badRequest(`Move the ${staff} active employee(s) out of ${oldName} before closing it`);
+    }
+    unit.status = body.status;
+  }
+
+  await unit.save();
+  if (unit.name !== oldName) {
+    await Promise.all([
+      Employee.updateMany({ department: oldName }, { $set: { department: unit.name } }),
+      Assignment.updateMany({ department: oldName }, { $set: { department: unit.name } }),
+      Requisition.updateMany({ department: oldName }, { $set: { department: unit.name } }),
+      OrgUnit.updateMany({ type: 'team', parent: unit._id, name: `${oldName} General` }, { $set: { name: `${unit.name} General` } }),
+    ]);
+  }
+  return unit;
 }
 
 function presentUnit(doc) {
@@ -322,6 +478,12 @@ async function ensureOrganization() {
 }
 
 module.exports = {
+  locationNames,
+  listDepartments,
+  createDepartment,
+  updateDepartment,
+  departmentNames,
+  assertDepartment,
   gradeForDesignation,
   orgRoleForDesignation,
   ensureOrganization,

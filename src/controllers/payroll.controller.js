@@ -13,7 +13,7 @@ const {
   visibleEmployeeIds,
 } = require('../services/employeeAccess');
 const { monthRange } = require('../services/attendance.service');
-const { buildPeriod, computePayslip, gatherAttendance } = require('../services/payroll.service');
+const { buildPeriod, computePayslip, gatherAttendance, gatherVariable } = require('../services/payroll.service');
 const arrears = require('../services/arrears.service');
 const {
   STATUS_TRANSITIONS,
@@ -38,10 +38,20 @@ const MONEY_FIELDS = new Set([
   'basic',
   'totalAllowances',
   'overtimePay',
+  'gazettedHolidayPay',
+  'medicalAllowance',
+  'incentive',
+  'otherEarnings',
+  'adjustedGross',
+  'providentFund',
+  'loanRecovery',
+  'messCharges',
+  'otherDeductions',
   'gross',
   'absence',
   'shortDay',
   'lwp',
+  'latePenalty',
   'attendanceTotal',
   'socialSecurity',
   'socialSecurityBase',
@@ -110,11 +120,15 @@ async function generateFor(employee, range, user) {
     };
   }
 
-  const [attendance, period] = [
+  const [attendance, variable, period] = [
     await gatherAttendance(employee, range),
+    await gatherVariable(employee, range),
     buildPeriod(employee, range, new Date()),
   ];
-  const computed = computePayslip({ employee, period, attendance });
+  const computed = computePayslip({ employee, period, attendance, variable });
+  if (period.isComplete && !(await require('../services/attendanceOps.service').lockedMonths([`${range.month}-01`])).size) {
+    computed.warnings.push('Attendance for this month is not locked yet, so these figures can still change.');
+  }
 
   const fields = {
     employee: employee._id,
@@ -424,7 +438,82 @@ const updateArrearsStatus = asyncHandler(async (req, res) => {
   });
 });
 
+const inputsService = require('../services/payrollInputs.service');
+
+/** GET /api/payroll/inputs?month= */
+const listInputs = asyncHandler(async (req, res) => {
+  res.json({ success: true, month: req.query.month, people: await inputsService.list(req.query.month) });
+});
+
+/** PUT /api/payroll/inputs */
+const saveInput = asyncHandler(async (req, res) => {
+  const input = await inputsService.save(req.body || {}, req.user);
+  await audit.record(req, { action: 'payroll_input', employee: input.employee, objectType: 'PayrollInput', objectId: input.id, summary: `${input.month} inputs` });
+  res.json({ success: true, input });
+});
+
+/** POST /api/payroll/inputs/import */
+const importInputs = asyncHandler(async (req, res) => {
+  const result = await inputsService.importRows((req.body || {}).month, (req.body || {}).rows, req.user);
+  await audit.record(req, { action: 'payroll_input_import', objectType: 'PayrollInput', summary: `${result.month}: ${result.applied} rows applied, ${result.failed.length} failed` });
+  res.json({ success: true, ...result });
+});
+
+/** GET /api/payroll/register?month= */
+const register = asyncHandler(async (req, res) => {
+  res.json({ success: true, ...(await inputsService.register(req.query.month)) });
+});
+
+const settlements = require('../services/settlement.service');
+
+const settlementList = asyncHandler(async (req, res) => {
+  res.json({ success: true, settlements: await settlements.list(req.query || {}), pending: await settlements.pending() });
+});
+
+const settlementGet = asyncHandler(async (req, res) => {
+  res.json({ success: true, settlement: await settlements.getOne(req.params.id) });
+});
+
+const settlementPrepare = asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  const settlement = await settlements.prepare(body.employee, body, req.user);
+  await audit.record(req, { action: 'settlement_prepare', employee: settlement.employee, objectType: 'FinalSettlement', objectId: settlement.id, summary: `${settlement.requestNo} net ${settlement.netPayable}` });
+  res.status(201).json({ success: true, settlement });
+});
+
+const settlementStatus = asyncHandler(async (req, res) => {
+  const next = (req.body || {}).status;
+  if (!next) throw ApiError.badRequest('A target status is required');
+  const settlement = await settlements.setStatus(req.params.id, next, req.body, req.user);
+  await audit.record(req, { action: 'settlement_status', employee: settlement.employee, objectType: 'FinalSettlement', objectId: settlement.id, summary: `${settlement.requestNo} → ${next}` });
+  res.json({ success: true, settlement });
+});
+
+const reportsService = require('../services/payrollReports.service');
+
+/** GET /api/payroll/bank-advice?month= — contains account numbers, so every read is audited */
+const bankAdvice = asyncHandler(async (req, res) => {
+  const advice = await reportsService.bankAdvice(req.query.month);
+  await audit.record(req, { action: 'payroll_bank_advice', objectType: 'Payslip', summary: `${advice.month}: ${advice.transfers.length} transfers, ${advice.totals.transfer}` });
+  res.json({ success: true, ...advice });
+});
+
+/** GET /api/payroll/statutory?month= */
+const statutoryReport = asyncHandler(async (req, res) => {
+  res.json({ success: true, ...(await reportsService.statutory(req.query.month)) });
+});
+
 module.exports = {
+  bankAdvice,
+  statutoryReport,
+  settlementList,
+  settlementGet,
+  settlementPrepare,
+  settlementStatus,
+  listInputs,
+  saveInput,
+  importInputs,
+  register,
   meta,
   generate,
   list,

@@ -7,7 +7,6 @@ const Assignment = require('../models/Assignment');
 const Employee = require('../models/Employee');
 const Grade = require('../models/Grade');
 const ApiError = require('../utils/ApiError');
-const { SHIFT_DEFINITIONS } = require('../config/hr');
 const {
   IDENTITY_FIELDS,
   CONTACT_FIELDS,
@@ -738,7 +737,7 @@ function presentAssignment(doc, showCompensation) {
   if (!showCompensation) {
     json.compensation = { restricted: true };
   }
-  const shift = SHIFT_DEFINITIONS[json.shiftType] || {};
+  const shift = require('../config/shiftRegistry').get(json.shiftType);
   json.shift = {
     type: json.shiftType,
     label: shift.label || json.shiftType,

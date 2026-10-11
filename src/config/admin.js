@@ -40,13 +40,14 @@ const ACTOR_ROLE_LABELS = {
 
 const WORKFLOW_STATUSES = ['draft', 'published', 'archived'];
 
-const LOOKUP_CATEGORIES = ['reason_code', 'document_type', 'separation_reason', 'cost_center'];
+const LOOKUP_CATEGORIES = ['reason_code', 'document_type', 'separation_reason', 'cost_center', 'location'];
 
 const LOOKUP_CATEGORY_LABELS = {
   reason_code: 'Reason codes',
   document_type: 'Document types',
   separation_reason: 'Separation reasons',
   cost_center: 'Cost centres',
+  location: 'Locations / plants',
 };
 
 const CONNECTOR_KINDS = ['webhook', 'biometric', 'bank_file', 'sso', 'erp', 'statutory_portal'];

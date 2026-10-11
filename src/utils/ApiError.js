@@ -26,8 +26,12 @@ class ApiError extends Error {
     return new ApiError(404, message);
   }
 
-  static conflict(message = 'Resource already exists') {
-    return new ApiError(409, message);
+  static conflict(message = 'Resource already exists', details) {
+    return new ApiError(409, message, details);
+  }
+
+  static tooMany(message = 'Too many attempts, please try again later') {
+    return new ApiError(429, message);
   }
 
   static internal(message = 'Something went wrong') {

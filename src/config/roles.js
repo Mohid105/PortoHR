@@ -30,7 +30,9 @@ const MODULES = {
   ESIGN: 'esign',
   ASSETS: 'assets',
   ANALYTICS: 'analytics',
+  REPORTS: 'reports',
   ADMIN: 'admin',
+  COMPANY: 'company',
 };
 
 const MODULE_LABELS = {
@@ -49,7 +51,9 @@ const MODULE_LABELS = {
   [MODULES.ESIGN]: 'E-sign',
   [MODULES.ASSETS]: 'Assets',
   [MODULES.ANALYTICS]: 'Analytics',
+  [MODULES.REPORTS]: 'Reports',
   [MODULES.ADMIN]: 'Admin',
+  [MODULES.COMPANY]: 'Company',
 };
 
 /**
@@ -59,6 +63,7 @@ const MODULE_LABELS = {
  */
 const ROLE_MODULES = {
   [ROLES.EMPLOYEE]: [
+    MODULES.COMPANY,
     MODULES.CORE_HR,
     MODULES.ATTENDANCE,
     MODULES.LEAVE,
@@ -74,8 +79,10 @@ const ROLE_MODULES = {
     MODULES.ESIGN,
     MODULES.ASSETS,
     MODULES.ANALYTICS,
+    MODULES.REPORTS,
   ],
   [ROLES.MANAGER]: [
+    MODULES.COMPANY,
     MODULES.CORE_HR,
     MODULES.ATTENDANCE,
     MODULES.LEAVE,
@@ -91,6 +98,7 @@ const ROLE_MODULES = {
     MODULES.ESIGN,
     MODULES.ASSETS,
     MODULES.ANALYTICS,
+    MODULES.REPORTS,
   ],
   [ROLES.HR_ADMIN]: Object.values(MODULES),
 };

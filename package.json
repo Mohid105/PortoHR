@@ -1,13 +1,21 @@
 {
   "name": "portohr",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "PortoHR - enterprise HRMS platform skeleton",
+  "description": "PortoHR - HR management system (Express + MongoDB)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node src/scripts/seed.js"
+    "seed": "node src/scripts/seed.js",
+    "test": "node --test test/*.test.js",
+    "build:css": "echo Stylesheet is pre-built in public/css/tailwind.css, nothing to build",
+    "css:compile": "tailwindcss -c tailwind.config.js -i src/styles/tailwind.input.css -o public/css/tailwind.css --minify",
+    "css:watch": "tailwindcss -c tailwind.config.js -i src/styles/tailwind.input.css -o public/css/tailwind.css --watch",
+    "create-users": "node src/scripts/create-users.js",
+    "stamp": "node scripts/stamp-assets.js",
+    "create-admin": "node src/scripts/create-admin.js",
+    "seed:demo": "node src/scripts/seed.js"
   },
   "engines": {
     "node": ">=18"
@@ -22,6 +30,10 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "pdfkit": "^0.20.2"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }

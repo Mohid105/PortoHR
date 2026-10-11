@@ -33,9 +33,17 @@ async function loadOverlay() {
   return byRole;
 }
 
+/**
+ * The company hub (news, directory, org chart) is for everyone, whatever matrix was saved.
+ * Reports is too: every report is cut down to the rows the caller may already see in the
+ * module it came from, so the page itself reveals nothing a role could not open elsewhere.
+ */
+const ALWAYS_ON = [MODULES.COMPANY, MODULES.REPORTS];
+
 async function resolveModules(role) {
   const overlay = await loadOverlay();
-  return overlay[role] || [];
+  const modules = overlay[role] || [];
+  return modules.concat(ALWAYS_ON.filter((key) => !modules.includes(key)));
 }
 
 async function roleCanAccess(role, moduleKey) {

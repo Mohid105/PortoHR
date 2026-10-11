@@ -1,16 +1,13 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const shiftRegistry = require('../config/shiftRegistry');
 const {
-  DEPARTMENTS,
   EMPLOYMENT_TYPES,
   EMPLOYMENT_STATUSES,
-  SHIFT_TYPES,
-  SHIFT_DEFINITIONS,
   WEEKDAYS,
   GENDERS,
   CURRENCIES,
-  LOCATIONS,
 } = require('../config/hr');
 
 const allowanceSchema = new mongoose.Schema(
@@ -87,13 +84,14 @@ const employeeSchema = new mongoose.Schema(
     department: {
       type: String,
       required: [true, 'Department is required'],
-      enum: { values: DEPARTMENTS, message: '{VALUE} is not a recognised department' },
+      maxlength: [80, 'Department cannot exceed 80 characters'],
+      trim: true,
       index: true,
     },
     team: { type: String, trim: true, default: '', maxlength: 60 },
     orgRole: { type: String, trim: true, default: '' },
     grade: { type: String, trim: true, default: '' },
-    location: { type: String, enum: [...LOCATIONS, ''], default: '' },
+    location: { type: String, trim: true, maxlength: 80, default: '' },
     costCenter: { type: String, trim: true, default: '' },
     legalEntity: { type: String, trim: true, default: 'PortoHR (Pvt) Ltd' },
     employeeCategory: { type: String, trim: true, default: '' },
@@ -119,11 +117,11 @@ const employeeSchema = new mongoose.Schema(
     lastWorkingDay: { type: Date, default: null },
 
     // --- Schedule ---
-    shiftType: {
-      type: String,
-      enum: { values: SHIFT_TYPES, message: '{VALUE} is not a recognised shift' },
-      default: 'general',
-    },
+    /** 'exempt' employees (senior staff) are counted present on working days without punching. */
+    attendanceMode: { type: String, enum: ['punch', 'exempt'], default: 'punch' },
+
+    /** The code of a shift defined in Attendance → Shifts. */
+    shiftType: { type: String, trim: true, default: 'general', maxlength: 24 },
     restDays: {
       type: [{ type: String, enum: WEEKDAYS }],
       default: ['saturday', 'sunday'],
@@ -175,7 +173,7 @@ employeeSchema.virtual('fullName').get(function fullName() {
 });
 
 employeeSchema.virtual('shift').get(function shift() {
-  const definition = SHIFT_DEFINITIONS[this.shiftType] || {};
+  const definition = shiftRegistry.get(this.shiftType);
   return {
     type: this.shiftType,
     label: definition.label || this.shiftType,

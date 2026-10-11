@@ -2,7 +2,6 @@
 
 const mongoose = require('mongoose');
 const { REQUISITION_STATUSES } = require('../config/recruitment');
-const { DEPARTMENTS, LOCATIONS } = require('../config/hr');
 
 const json = {
   virtuals: true,
@@ -21,8 +20,8 @@ const requisitionSchema = new mongoose.Schema(
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     position: { type: mongoose.Schema.Types.ObjectId, ref: 'Position', required: true },
     title: { type: String, required: true, trim: true, maxlength: 80 },
-    department: { type: String, enum: [...DEPARTMENTS, ''], default: '' },
-    location: { type: String, enum: [...LOCATIONS, ''], default: '' },
+    department: { type: String, trim: true, default: '' },
+    location: { type: String, trim: true, maxlength: 80, default: '' },
     openings: { type: Number, default: 1, min: 1, max: 20 },
     filledCount: { type: Number, default: 0, min: 0 },
     hiringManager: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', default: null },

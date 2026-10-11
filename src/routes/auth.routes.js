@@ -19,5 +19,8 @@ router.post('/', loginLimiter, controller.login);
 router.post('/login', loginLimiter, controller.login);
 router.post('/logout', authenticate, controller.logout);
 router.get('/me', authenticate, controller.me);
+router.post('/change-password', authenticate, controller.changePassword);
+router.post('/logout-all', authenticate, controller.logoutAll);
+router.get('/activity', authenticate, controller.activity);
 
 module.exports = router;

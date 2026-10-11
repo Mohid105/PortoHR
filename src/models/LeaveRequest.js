@@ -43,11 +43,14 @@ const leaveRequestSchema = new mongoose.Schema(
       default: '',
     },
 
+    /** Set when the request was entered in hours (a part-day absence). */
+    hours: { type: Number, default: null, min: 0.25, max: 24 },
+
     /** Working days actually charged, excluding rest days and holidays. */
     days: {
       type: Number,
       required: [true, 'Leave duration is required'],
-      min: [0.5, 'Leave must cover at least half a day'],
+      min: [0.05, 'Leave must cover at least half an hour'],
     },
 
     reason: {

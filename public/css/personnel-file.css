@@ -1,0 +1,42 @@
+/* Core HR: personnel file tab. Tokens come from theme.css. */
+.pf { display: grid; gap: 1rem; margin-top: 1rem; }
+.pf-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.pf-bar h2 { margin: 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
+.pf-grow { flex: 1; }
+.pf-year { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 650; color: var(--muted); }
+.pf-year select { padding: .3rem .6rem; font: inherit; border: 1px solid var(--border-strong); border-radius: .8rem; background: var(--surface); color: var(--text); }
+.pf-block { background: var(--surface); border: 1px solid var(--border); border-radius: 1.4rem; box-shadow: var(--shadow-card); padding: 1.1rem 1.3rem 1.2rem; }
+.pf-block > header { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+.pf-block h3 { margin: 0; flex: 1; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); }
+.pf-add { padding: .25rem .8rem; font: inherit; font-size: .74rem; font-weight: 650; color: var(--primary); background: var(--primary-soft); border: 0; border-radius: 999px; cursor: pointer; }
+.pf-add:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+.pf-dl { display: grid; gap: .6rem .9rem; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); margin: 0; }
+.pf-dl > div { padding: .55rem .75rem; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 1rem; min-width: 0; }
+.pf-dl dt { font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.pf-dl dd { margin: .2rem 0 0; font-size: .88rem; font-weight: 600; overflow-wrap: anywhere; }
+.pf-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 1rem; }
+.pf-tbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.pf-tbl th { padding: .5rem .7rem; text-align: left; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface-alt); border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+.pf-tbl td { padding: .45rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.pf-tbl tbody tr:last-child td { border-bottom: 0; }
+.pf-tbl .n { text-align: right; font-variant-numeric: tabular-nums; }
+.pf-tbl .pf-strong td { font-weight: 700; background: var(--surface-alt); }
+.pf-x { width: 2rem; text-align: center; }
+.pf-del { width: 1.5rem; height: 1.5rem; font-size: 1rem; line-height: 1; color: var(--muted); background: none; border: 0; border-radius: 50%; cursor: pointer; }
+.pf-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.pf-auto { font-size: .6rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+.pf-nil { color: var(--muted); }
+.pf-empty { margin: 0; font-size: .8rem; color: var(--muted); }
+.pf-hint { display: block; margin-top: .2rem; font-size: .7rem; font-weight: 400; color: var(--muted); }
+
+/* Reports tab: the four downloadable PDFs. */
+.dl-grid { display: grid; gap: 1rem; margin-top: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+.dl-card { display: flex; flex-direction: column; gap: .6rem; padding: 1.1rem 1.3rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1.4rem; box-shadow: var(--shadow-card); }
+.dl-card h3 { margin: 0; font-family: var(--font-display); font-size: 1.02rem; font-weight: 600; }
+.dl-card p { margin: 0; flex: 1; font-size: .78rem; color: var(--muted); }
+.dl-fields { display: flex; flex-wrap: wrap; gap: .6rem; }
+.dl-fields label { display: flex; flex-direction: column; gap: .2rem; flex: 1; min-width: 8rem; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.dl-fields input { padding: .45rem .65rem; font: inherit; font-size: .82rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: .8rem; }
+.dl-act { display: flex; align-items: center; gap: .7rem; margin-top: .2rem; }
+.dl-msg { font-size: .75rem; color: var(--muted); }
+.dl-msg.is-bad { color: var(--danger); font-weight: 600; }

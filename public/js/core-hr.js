@@ -997,9 +997,13 @@
     var perms = employee.permissions || {};
     var person = employee.person || {};
     var actions = '';
+    // The same people who may see this person's pay, attendance and payslips may open their full report.
+    var reportLink = perms.canViewReport || canManage()
+      ? '<a href="/reports.html#/employee/' + escapeHtml(employee.id || employee._id) + '" class="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Employee report</a>'
+      : '';
     if (canManage()) {
       actions =
-        '<div class="flex flex-wrap gap-2">' +
+        '<div class="flex flex-wrap gap-2">' + reportLink +
         '<button type="button" data-profile-edit class="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Change</button>' +
         (['resigned', 'terminated'].indexOf(employee.employmentStatus) === -1
           ? '<button type="button" data-profile-separate class="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700">Separate</button>'
@@ -1008,7 +1012,9 @@
         '</div>';
     } else if (canRequest(employee)) {
       actions =
-        '<button type="button" data-profile-request class="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Request assignment change</button>';
+        '<div class="flex flex-wrap gap-2">' + reportLink + '<button type="button" data-profile-request class="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Request assignment change</button></div>';
+    } else if (reportLink) {
+      actions = reportLink;
     }
 
     var workingDays = 7 - ((employee.restDays && employee.restDays.length) || 0);
@@ -1020,8 +1026,10 @@
       ['compensation', 'Pay'],
       ['statutory', 'Statutory'],
       ['family', 'Family'],
-      ['qualifications', 'Qualifications'],
+      ['qualifications', 'Education & career'],
       ['documents', 'Documents'],
+      ['file', 'Personnel file'],
+      ['downloads', 'Reports'],
       ['history', 'History'],
     ]
       .map(function (item) {
@@ -1121,12 +1129,18 @@
 
     var qualRows = (employee.qualifications || [])
       .map(function (row) {
+        var detail = [row.level, row.discipline, row.result, row.issuedOn ? formatDate(row.issuedOn) : '']
+          .filter(Boolean)
+          .join(' · ');
         return (
           '<li class="border-b border-slate-100 py-3 text-sm"><p class="font-medium text-slate-900">' +
           escapeHtml(row.title) +
+          (row.preference ? ' <span class="pill info">' + escapeHtml(row.preference) + '</span>' : '') +
           '</p><p class="text-xs text-slate-500">' +
           escapeHtml(row.type + (row.institution ? ' · ' + row.institution : '')) +
-          '</p></li>'
+          '</p>' +
+          (detail ? '<p class="text-xs text-slate-400">' + escapeHtml(detail) + '</p>' : '') +
+          '</li>'
         );
       })
       .join('');
@@ -1136,6 +1150,50 @@
         ? '<button type="button" data-add="qualification" class="mt-3 text-xs font-medium text-slate-700 underline">Add qualification</button>'
         : '') +
         (qualRows ? '<ul class="mt-2">' + qualRows + '</ul>' : '<p class="mt-4 text-sm text-slate-500">No qualifications recorded.</p>')
+    );
+
+    var expRows = (employee.experience || [])
+      .map(function (row) {
+        return (
+          '<li class="border-b border-slate-100 py-3 text-sm"><p class="font-medium text-slate-900">' +
+          escapeHtml(row.organization) +
+          '</p><p class="text-xs text-slate-500">' +
+          escapeHtml([row.designation, (row.fromYear || '') + (row.toYear ? ' – ' + row.toYear : '')].filter(Boolean).join(' · ')) +
+          '</p>' +
+          (row.leavingCause ? '<p class="text-xs text-slate-400">Left: ' + escapeHtml(row.leavingCause) + '</p>' : '') +
+          '</li>'
+        );
+      })
+      .join('');
+    var experience = card(
+      'Previous experience',
+      (perms.canEditLowRisk
+        ? '<button type="button" data-add="experience" class="mt-3 text-xs font-medium text-slate-700 underline">Add experience</button>'
+        : '') +
+        (expRows ? '<ul class="mt-2">' + expRows + '</ul>' : '<p class="mt-4 text-sm text-slate-500">No previous employment recorded.</p>'),
+      'mt-4'
+    );
+
+    var rewardRows = (employee.rewards || [])
+      .map(function (row) {
+        return (
+          '<li class="border-b border-slate-100 py-3 text-sm"><p class="font-medium text-slate-900">' +
+          escapeHtml(row.reward) +
+          '</p><p class="text-xs text-slate-500">' +
+          escapeHtml([row.authority, row.awardedOn ? formatDate(row.awardedOn) : ''].filter(Boolean).join(' · ')) +
+          '</p>' +
+          (row.description ? '<p class="text-xs text-slate-400">' + escapeHtml(row.description) + '</p>' : '') +
+          '</li>'
+        );
+      })
+      .join('');
+    var rewards = card(
+      'Rewards & recognition',
+      (perms.canEditIdentity
+        ? '<button type="button" data-add="reward" class="mt-3 text-xs font-medium text-slate-700 underline">Record an award</button>'
+        : '') +
+        (rewardRows ? '<ul class="mt-2">' + rewardRows + '</ul>' : '<p class="mt-4 text-sm text-slate-500">No rewards recorded.</p>'),
+      'mt-4'
     );
 
     var docRows = (employee.documents || [])
@@ -1149,7 +1207,15 @@
           escapeHtml(row.verificationStatus) +
           (row.expiresOn ? ' · exp ' + formatDate(row.expiresOn) : '') +
           (row.expired ? ' · expired' : row.expiringSoon ? ' · expiring' : '') +
-          '</p></li>'
+          '</p>' +
+          (row.file && row.file.id
+            ? '<p class="mt-1.5"><button type="button" data-dl="' + escapeHtml(row.id) + '" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-[#2054C9] hover:bg-slate-100">' +
+              '<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12M12 16.5V3" /></svg>' +
+              escapeHtml(row.file.name) + ' <span class="font-normal text-slate-400">· ' + Math.max(1, Math.round(row.file.size / 1024)) + ' KB</span></button></p>'
+            : canManage() || perms.canEditLowRisk
+              ? '<p class="mt-1.5"><button type="button" data-attach="' + escapeHtml(row.id) + '" class="rounded-full px-3 py-1 text-xs font-semibold text-slate-500 underline hover:text-slate-900">Attach file</button></p>'
+              : '') +
+          '</li>'
         );
       })
       .join('');
@@ -1250,8 +1316,10 @@
     else if (tab === 'compensation') body = compensationTab;
     else if (tab === 'statutory') body = statutoryTab;
     else if (tab === 'family') body = family;
-    else if (tab === 'qualifications') body = qualifications;
+    else if (tab === 'qualifications') body = qualifications + experience + rewards;
     else if (tab === 'documents') body = documents;
+    else if (tab === 'file') body = '<div id="pf-host"></div>';
+    else if (tab === 'downloads') body = '<div id="dl-host"></div>';
     else if (tab === 'history') body = historyTab;
 
     return (
@@ -1424,6 +1492,10 @@
     try {
       var result = await api.get('/employees/' + id);
       view.innerHTML = profileHtml(result.employee);
+      var pfHost = view.querySelector('#pf-host');
+      if (pfHost && window.PortoHR.personnelFile) window.PortoHR.personnelFile.mount(pfHost, result.employee.id || result.employee._id);
+      var dlHost = view.querySelector('#dl-host');
+      if (dlHost && window.PortoHR.employeeDownloads) window.PortoHR.employeeDownloads.mount(dlHost, result.employee);
 
       var editButton = view.querySelector('[data-profile-edit]');
       if (editButton)
@@ -1453,6 +1525,31 @@
         rehireButton.addEventListener('click', function () {
           openRecord('rehire', result.employee);
         });
+      view.querySelectorAll('[data-dl]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          api.download('/employees/' + result.employee.id + '/documents/' + button.getAttribute('data-dl') + '/file').catch(function (err) {
+            toast(err.message || 'Could not download the file', 'error');
+          });
+        });
+      });
+      view.querySelectorAll('[data-attach]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          var picker = document.createElement('input');
+          picker.type = 'file';
+          picker.accept = '.pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx';
+          picker.addEventListener('change', async function () {
+            if (!picker.files[0]) return;
+            try {
+              await api.upload('/employees/' + result.employee.id + '/documents/' + button.getAttribute('data-attach') + '/file', picker.files[0]);
+              toast('File attached');
+              await renderProfile(result.employee.id);
+            } catch (err) {
+              toast(err.message || 'Could not attach the file', 'error');
+            }
+          });
+          picker.click();
+        });
+      });
       view.querySelectorAll('[data-add]').forEach(function (button) {
         button.addEventListener('click', function () {
           openRecord(button.getAttribute('data-add'), result.employee);
@@ -1714,6 +1811,8 @@
     var title = {
       family: 'Add family / emergency contact',
       qualification: 'Add qualification',
+      experience: 'Add previous experience',
+      reward: 'Record an award',
       document: 'Add document',
       bank: 'Bank / payment change',
       statutory: 'Statutory enrolment',
@@ -1722,8 +1821,10 @@
     };
     el('record-title').textContent = title[kind] || 'Add record';
     if (kind === 'family') form.innerHTML = fieldInput('name', 'Name') + fieldInput('relationship', 'Relationship') + fieldInput('phone', 'Phone');
-    else if (kind === 'qualification') form.innerHTML = fieldInput('title', 'Title') + fieldInput('type', 'Type') + fieldInput('institution', 'Institution');
-    else if (kind === 'document') form.innerHTML = fieldInput('type', 'Type (cnic, contract…)') + fieldInput('title', 'Title') + fieldInput('reference', 'Reference') + fieldInput('expiresOn', 'Expiry', 'date');
+    else if (kind === 'qualification') form.innerHTML = fieldInput('title', 'Degree / title (e.g. MBA)') + fieldInput('type', 'Type (education, professional…)') + fieldInput('level', 'Level (matric, bachelor, masters…)') + fieldInput('discipline', 'Discipline / subject') + fieldInput('result', 'Division / CGPA') + fieldInput('preference', 'Preference (primary, secondary, tertiary)') + fieldInput('institution', 'Institution') + fieldInput('issuedOn', 'Year / date awarded', 'date');
+    else if (kind === 'experience') form.innerHTML = fieldInput('organization', 'Organization') + fieldInput('designation', 'Designation') + fieldInput('fromYear', 'From (year)', 'number') + fieldInput('toYear', 'To (year)', 'number') + fieldInput('leavingCause', 'Reason for leaving') + fieldInput('description', 'Brief description');
+    else if (kind === 'reward') form.innerHTML = fieldInput('reward', 'Reward / award') + fieldInput('authority', 'Awarding authority') + fieldInput('awardedOn', 'Date', 'date') + fieldInput('description', 'Description');
+    else if (kind === 'document') form.innerHTML = fieldInput('type', 'Type (cnic, contract…)') + fieldInput('title', 'Title') + fieldInput('reference', 'Reference') + fieldInput('expiresOn', 'Expiry', 'date') + fieldInput('file', 'File — PDF, image, Word or Excel, up to 5 MB (optional)', 'file');
     else if (kind === 'bank') form.innerHTML = fieldInput('bankName', 'Bank') + fieldInput('accountTitle', 'Account title') + fieldInput('accountNumber', 'Account number') + fieldInput('iban', 'IBAN') + fieldInput('reason', 'Reason');
     else if (kind === 'statutory') form.innerHTML = fieldInput('scheme', 'Scheme (eobi, provident_fund…)') + fieldInput('membershipNumber', 'Membership no.');
     else if (kind === 'separate') form.innerHTML = fieldInput('lastWorkingDay', 'Last working day', 'date') + fieldInput('terminationDate', 'Termination date', 'date') + fieldInput('separationType', 'Type (resignation…)') + fieldInput('reason', 'Reason');
@@ -1743,14 +1844,28 @@
     var form = el('record-form');
     var data = {};
     Array.prototype.slice.call(form.querySelectorAll('input')).forEach(function (input) {
+      if (input.type === 'file') return;
       if (input.value) data[input.name] = input.value;
     });
+    var fileInput = form.querySelector('input[type="file"]');
+    var pendingFile = fileInput && fileInput.files && fileInput.files[0];
     var id = recordContext.employee.id;
     var kind = recordContext.kind;
     try {
       if (kind === 'family') await api.post('/employees/' + id + '/family', data);
       else if (kind === 'qualification') await api.post('/employees/' + id + '/qualifications', data);
-      else if (kind === 'document') await api.post('/employees/' + id + '/documents', data);
+      else if (kind === 'experience') await api.post('/employees/' + id + '/experience', data);
+      else if (kind === 'reward') await api.post('/employees/' + id + '/rewards', data);
+      else if (kind === 'document') {
+        var created = await api.post('/employees/' + id + '/documents', data);
+        if (pendingFile && created && created.document) {
+          try {
+            await api.upload('/employees/' + id + '/documents/' + created.document.id + '/file', pendingFile);
+          } catch (uploadErr) {
+            toast('The document was saved, but the file was not attached: ' + uploadErr.message, 'error');
+          }
+        }
+      }
       else if (kind === 'bank') await api.post('/employees/' + id + '/bank', data);
       else if (kind === 'statutory') await api.post('/employees/' + id + '/statutory', data);
       else if (kind === 'separate') await api.post('/employees/' + id + '/separate', data);
@@ -1847,8 +1962,9 @@
   }
 
   function wirePanel() {
+    // Hiring happens on its own full-screen page; this panel is only for editing.
     el('btn-new-employee').addEventListener('click', function () {
-      openPanel(null);
+      window.location.href = '/employee-new.html';
     });
     el('panel-close').addEventListener('click', closePanel);
     el('panel-cancel').addEventListener('click', closePanel);

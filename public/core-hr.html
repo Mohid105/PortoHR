@@ -10,8 +10,10 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <link rel="stylesheet" href="/css/personnel-file.css?v=20261009-0452" />
   </head>
   <!-- `invisible` is removed by shell.js once the session is verified. -->
   <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
@@ -424,8 +426,32 @@
       }
     </style>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/core-hr.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <div id="import-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="import-title">
+      <div class="modal-box wide" style="max-width:56rem;max-height:92vh;overflow:auto">
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 id="import-title" class="mr-auto">Import employees</h2>
+          <button id="import-template" type="button" class="btn btn-secondary btn-sm">Download template</button>
+          <button id="import-close" type="button" class="btn-ghost">Close</button>
+        </div>
+        <p class="modal-sub" style="margin-top:0">
+          Upload a CSV exported from Excel or Google Sheets. Required columns: employeeCode, firstName, lastName, email,
+          designation, department, dateOfJoining and baseSalary. Nothing is created until you confirm the preview.
+        </p>
+        <div id="import-step-file" class="grid gap-3">
+          <label>CSV file<input id="import-file" type="file" accept=".csv,text/csv,.txt" /></label>
+          <label>…or paste rows (with the header line)<textarea id="import-paste" rows="5" placeholder="employeeCode,firstName,lastName,email,designation,department,dateOfJoining,baseSalary"></textarea></label>
+          <div id="import-error" class="modal-error hidden"></div>
+          <div class="modal-actions"><button id="import-check" type="button" class="btn btn-primary">Check file</button></div>
+        </div>
+        <div id="import-step-preview" class="hidden grid gap-3"></div>
+      </div>
+    </div>
+
+    <script src="/js/personnel-file.js?v=20261009-0452"></script>
+    <script src="/js/employee-downloads.js?v=20261009-0452"></script>
+    <script src="/js/core-hr.js?v=20261009-0452"></script>
+    <script src="/js/core-hr-import.js?v=20261009-0452"></script>
   </body>
 </html>

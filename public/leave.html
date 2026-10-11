@@ -10,8 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
   </head>
   <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
     <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
@@ -23,6 +24,7 @@
               Apply against your balances, see the team calendar, and clear the approval queue.
             </p>
           </div>
+          <button id="record-open" type="button" class="mr-2 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Leave record</button>
           <button
             id="apply-open"
             type="button"
@@ -98,6 +100,11 @@
           <select id="halfDay" name="halfDay" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
         </div>
         <div>
+          <label for="hours" class="block text-sm font-medium text-slate-700">Or, hours off <span class="font-normal text-slate-400">(single day, optional)</span></label>
+          <input id="hours" name="hours" type="number" min="0.25" max="12" step="0.25" placeholder="e.g. 2.5" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+          <p class="mt-1 text-xs text-slate-500">For a part-day absence. It is charged as a fraction of your shift and replaces the day length above.</p>
+        </div>
+        <div>
           <label for="reason" class="block text-sm font-medium text-slate-700">Reason</label>
           <textarea id="reason" name="reason" rows="4" required minlength="8" class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Why you need the time off"></textarea>
         </div>
@@ -108,10 +115,35 @@
       </form>
     </aside>
 
+    <div id="record-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-box wide" style="max-width:46rem;max-height:90vh;overflow:auto">
+        <div class="flex flex-wrap items-center gap-2 no-print">
+          <h2 class="mr-auto">Employee's leave record</h2>
+          <select id="rec-employee" class="hidden rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" style="width:auto"></select>
+          <select id="rec-year" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" style="width:auto"></select>
+          <button id="rec-print" type="button" class="btn btn-secondary btn-sm">Print</button>
+          <button id="rec-adjust" type="button" class="btn btn-secondary btn-sm hidden">Adjust balance</button>
+          <button id="rec-close" type="button" class="btn btn-ghost">Close</button>
+        </div>
+        <div id="rec-body" class="text-sm"></div>
+        <form id="adj-form" class="hidden grid gap-3 border-t pt-3 no-print" style="border-color:var(--border)" novalidate>
+          <p class="text-xs text-slate-500">Credit days (for example compensatory leave earned) or enter a negative number to correct a balance. It applies to the year shown.</p>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <label>Leave type<select id="adj-type"></select></label>
+            <label>Days (+/−)<input id="adj-days" type="number" step="0.25" /></label>
+            <label>Reason<input id="adj-reason" maxlength="200" /></label>
+          </div>
+          <div id="adj-error" class="modal-error hidden"></div>
+          <div class="modal-actions"><button type="submit" class="btn btn-primary">Save adjustment</button></div>
+        </form>
+      </div>
+    </div>
+
     <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-[60] flex w-80 flex-col gap-2"></div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/leave.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/leave.js?v=20261009-0452"></script>
+    <script src="/js/leave-extras.js?v=20261009-0452"></script>
   </body>
 </html>

@@ -10,8 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
   </head>
   <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
     <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
@@ -25,6 +26,8 @@
 
         <div id="ad-tabs" class="mt-8 flex flex-wrap gap-2 border-b border-slate-200">
           <button type="button" data-tab="console" class="tab-btn -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">Console</button>
+          <button type="button" data-tab="users" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Users &amp; access</button>
+          <button type="button" data-tab="departments" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Departments</button>
           <button type="button" data-tab="roles" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Role matrix</button>
           <button type="button" data-tab="workflows" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Workflows</button>
           <button type="button" data-tab="delegations" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Delegation</button>
@@ -74,6 +77,28 @@
           </form>
         </section>
 
+        <section id="tab-users" class="mt-6 hidden space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="max-w-2xl text-sm text-slate-500">
+              Give employees a login, change roles, deactivate accounts and reset passwords. New and reset
+              accounts get a one-time temporary password that must be changed at first sign-in.
+            </p>
+            <button id="user-new" type="button" class="btn btn-primary">Create login</button>
+          </div>
+          <div id="users-unlinked"></div>
+          <div id="users-board" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+          <div id="users-activity" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
+        <section id="tab-departments" class="mt-6 hidden space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="max-w-2xl text-sm text-slate-500">
+              Departments drive Core HR forms, requisitions, reporting lines and the org chart. Renaming one updates
+              everyone in it; a department with active people cannot be closed.
+            </p>
+            <button id="dept-new" type="button" class="btn btn-primary">Add department</button>
+          </div>
+          <div id="dept-board" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+        </section>
         <section id="tab-roles" class="mt-6 hidden">
           <div id="roles-board"></div>
         </section>
@@ -166,10 +191,25 @@
       </div>
     </main>
 
+    <div id="access-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <form id="access-form" class="modal-box" novalidate>
+        <h2 id="access-title"></h2>
+        <p id="access-sub" class="modal-sub"></p>
+        <div id="access-error" class="modal-error hidden" role="alert"></div>
+        <div id="access-fields" class="grid gap-3"></div>
+        <div id="access-result" class="hidden"></div>
+        <div class="modal-actions">
+          <button type="button" id="access-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="access-submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+
     <div id="toasts" class="pointer-events-none fixed bottom-6 right-6 z-[60] flex w-80 flex-col gap-2"></div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/admin.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/admin.js?v=20261009-0452"></script>
+    <script src="/js/access.js?v=20261009-0452"></script>
   </body>
 </html>

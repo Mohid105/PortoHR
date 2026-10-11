@@ -7,6 +7,8 @@
 
   var TABS = [
     'console',
+    'users',
+    'departments',
     'roles',
     'workflows',
     'delegations',

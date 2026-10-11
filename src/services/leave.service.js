@@ -5,8 +5,9 @@ const LeaveRequest = require('../models/LeaveRequest');
 const LeaveType = require('../models/LeaveType');
 const Attendance = require('../models/Attendance');
 const ApiError = require('../utils/ApiError');
-const { attendanceDate, weekdayKey } = require('./attendance.service');
-const { LEAVE_TYPES, LEAVE_TYPE_CODES, typeOf, STATUS_LABELS } = require('../config/leave');
+const { attendanceDate, weekdayKey, shiftFor, round2 } = require('./attendance.service');
+const LeaveAdjustment = require('../models/LeaveAdjustment');
+const { LEAVE_TYPES, LEAVE_TYPE_CODES, typeOf, STATUS_LABELS, groupOf } = require('../config/leave');
 
 function ymd(date) {
   return attendanceDate(date).toISOString().slice(0, 10);
@@ -152,11 +153,29 @@ async function ensureLeaveTypes() {
   return LeaveType.find().lean();
 }
 
-function entitlementFor(employee, type, carried) {
-  const base = type.entitlementFromEmployment
-    ? Number(employee.annualLeaveDays) || type.defaultEntitlement
-    : type.defaultEntitlement;
-  return base + (carried || 0);
+/** Whether this employee's leave group may take the type at all. */
+function appliesTo(employee, typeCode) {
+  const cfg = typeOf(typeCode);
+  return !cfg || !cfg.appliesTo || cfg.appliesTo.includes(groupOf(employee));
+}
+
+function entitlementFor(employee, type, carried, adjusted) {
+  const cfg = typeOf(type.code) || {};
+  const group = groupOf(employee);
+  let base;
+  if (type.entitlementFromEmployment) {
+    base = Number(employee.annualLeaveDays) || type.defaultEntitlement;
+  } else if (cfg.entitlementByGroup && cfg.entitlementByGroup[group] !== undefined) {
+    base = cfg.entitlementByGroup[group];
+  } else {
+    base = type.defaultEntitlement;
+  }
+  return base + (carried || 0) + (adjusted || 0);
+}
+
+async function adjustedDays(employeeId, leaveType, year) {
+  const rows = await LeaveAdjustment.find({ employee: employeeId, leaveType, year }).lean();
+  return rows.reduce((sum, row) => sum + Number(row.days), 0);
 }
 
 async function takenDays(employeeId, leaveType, year) {
@@ -210,24 +229,28 @@ async function balancesFor(employee, year) {
 
   const rows = await Promise.all(
     active
+      .filter((type) => appliesTo(employee, type.code))
       .slice()
       .sort((a, b) => LEAVE_TYPE_CODES.indexOf(a.code) - LEAVE_TYPE_CODES.indexOf(b.code))
       .map(async (type) => {
       const carried = await carriedInto(employee, type, year);
-      const entitlement = entitlementFor(employee, type, carried);
+      const adjusted = await adjustedDays(employee._id, type.code, year);
+      const entitlement = entitlementFor(employee, type, carried, adjusted);
       const taken = await takenDays(employee._id, type.code, year);
       const pending = await pendingDays(employee._id, type.code, year);
       return {
         code: type.code,
-        label: type.label,
+        label: (typeOf(type.code) || {}).label || type.label,
         paid: type.paid,
-        hint: type.hint,
+        hint: (typeOf(type.code) || {}).hint || type.hint,
         year,
         entitlementDays: entitlement,
         carriedDays: carried,
+        adjustedDays: adjusted,
         takenDays: taken,
         pendingDays: pending,
-        availableDays: Math.max(0, entitlement - taken - pending),
+        availableDays: Math.max(0, round2(entitlement - taken - pending)),
+        balanceDays: round2(entitlement - taken),
       };
     })
   );
@@ -239,8 +262,13 @@ async function assertBalance(employee, leaveType, days, year, exceptId) {
   const type = typeOf(leaveType);
   if (!type) throw ApiError.badRequest('Unknown leave type');
 
+  if (!appliesTo(employee, type.code)) {
+    throw ApiError.badRequest(`${type.label} is not available to ${groupOf(employee)} employees`);
+  }
+
   const carried = await carriedInto(employee, type, year);
-  const entitlement = entitlementFor(employee, type, carried);
+  const adjusted = await adjustedDays(employee._id, type.code, year);
+  const entitlement = entitlementFor(employee, type, carried, adjusted);
   const taken = await takenDays(employee._id, leaveType, year);
   const pending = await pendingDays(employee._id, leaveType, year);
   const reserved = exceptId
@@ -249,7 +277,7 @@ async function assertBalance(employee, leaveType, days, year, exceptId) {
   const available = entitlement - taken - reserved;
   if (days > available + 1e-9) {
     throw ApiError.badRequest(
-      `${type.label} only has ${Math.max(0, available)} day(s) remaining this year`
+      `${type.label} only has ${Math.max(0, round2(available))} day(s) remaining this year`
     );
   }
 }
@@ -265,7 +293,23 @@ async function createRequest(employee, user, body) {
   if (reason.length < 8) throw ApiError.badRequest('Please give at least 8 characters of context');
 
   const holidays = await holidayKeys(fromDate, toDate, employee.location);
-  const days = countWorkingDays(employee, fromDate, toDate, holidays, halfDay);
+  let days;
+  let hours = null;
+  if (body.hours !== undefined && body.hours !== null && body.hours !== '') {
+    // A part-day absence entered in hours is charged as a fraction of the shift.
+    hours = Number(body.hours);
+    const shiftHours = shiftFor(employee.shiftType).expectedHours;
+    if (!Number.isFinite(hours) || hours < 0.25 || hours > shiftHours) {
+      throw ApiError.badRequest(`Hours must be between 0.25 and ${shiftHours} (one shift)`);
+    }
+    if (ymd(fromDate) !== ymd(toDate)) throw ApiError.badRequest('A request in hours must be for a single day');
+    if (isNonWorking(employee, fromDate, holidays)) {
+      throw ApiError.badRequest('That day is a rest day or public holiday');
+    }
+    days = round2(hours / shiftHours);
+  } else {
+    days = countWorkingDays(employee, fromDate, toDate, holidays, halfDay);
+  }
 
   const overlaps = await overlappingRequests(employee._id, fromDate, toDate);
   if (overlaps.length) {
@@ -280,7 +324,8 @@ async function createRequest(employee, user, body) {
     leaveType: type.code,
     fromDate,
     toDate,
-    halfDay,
+    halfDay: hours ? '' : halfDay,
+    hours,
     days,
     reason,
     submittedBy: user._id,
@@ -317,6 +362,11 @@ async function applyToAttendance(request, employee, user) {
       {
         $set: {
           shiftStatus: 'on_leave',
+          source: 'leave',
+          flags: [],
+          lateMinutes: 0,
+          earlyExitMinutes: 0,
+          punchCount: 0,
           notes: label,
           leaveRequest: request._id,
           timeIn: null,
@@ -457,7 +507,57 @@ async function calendarEntries(employees, monthStart, monthEnd) {
   };
 }
 
+/** The yearly leave record: every approved request plus the closing balances. */
+async function statementFor(employee, year) {
+  const { start, end } = yearBounds(year);
+  const [requests, balances] = await Promise.all([
+    LeaveRequest.find({ employee: employee._id, status: 'approved', fromDate: { $gte: start, $lt: end } }).sort({ fromDate: 1 }),
+    balancesFor(employee, year),
+  ]);
+  return {
+    year,
+    group: groupOf(employee),
+    entries: requests.map((row) => {
+      const out = presentRequest(row);
+      return {
+        id: out.id,
+        leaveType: out.leaveType,
+        leaveTypeLabel: out.leaveTypeLabel,
+        days: out.days,
+        hours: out.hours || null,
+        month: out.fromDate.slice(0, 7),
+        fromDate: out.fromDate,
+        toDate: out.toDate,
+        decidedBy: out.decidedBy ? String(out.decidedBy) : null,
+      };
+    }),
+    balances,
+  };
+}
+
+async function createAdjustment(employee, body, user) {
+  const type = typeOf(body.leaveType);
+  if (!type) throw ApiError.badRequest('Choose a leave type');
+  const days = Number(body.days);
+  if (!Number.isFinite(days) || days === 0 || Math.abs(days) > 365) throw ApiError.badRequest('Enter the number of days to add (or remove, as a negative number)');
+  const year = Number(body.year) || new Date().getUTCFullYear();
+  const reason = String(body.reason || '').trim();
+  if (reason.length < 4) throw ApiError.badRequest('A reason is required');
+  const row = await LeaveAdjustment.create({
+    employee: employee._id,
+    leaveType: type.code,
+    year,
+    days: round2(days),
+    reason,
+    createdBy: user._id,
+  });
+  return row.toJSON();
+}
+
 module.exports = {
+  statementFor,
+  createAdjustment,
+  appliesTo,
   ymd,
   parseDate,
   holidayKeys,

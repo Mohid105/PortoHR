@@ -10,8 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
     <style>
       /* A payslip has to print cleanly: drop the app chrome and every control,
          and let the sheet occupy the page on its own. */
@@ -76,6 +77,10 @@
 
           <div id="pay-tabs" class="mt-8 flex flex-wrap gap-2 border-b border-slate-200">
             <button type="button" data-pay-tab="payslips" class="pay-tab -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">Payslips</button>
+            <button type="button" data-pay-tab="register" class="pay-tab hr-only hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Salary register</button>
+            <button type="button" data-pay-tab="inputs" class="pay-tab hr-only hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Monthly inputs</button>
+            <button type="button" data-pay-tab="outputs" class="pay-tab hr-only hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Bank &amp; statutory</button>
+            <button type="button" data-pay-tab="settlements" class="pay-tab hr-only hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Final settlements <span id="settle-count" class="ml-1 hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-800">0</span></button>
             <button type="button" data-pay-tab="arrears" class="pay-tab -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Arrears</button>
           </div>
 
@@ -135,6 +140,73 @@
             </div>
           </section>
 
+          <section id="view-register" class="mt-6 hidden space-y-4">
+            <div class="no-print flex flex-wrap items-center gap-3">
+              <input id="reg-month" type="month" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+              <span id="reg-caption" class="text-xs text-slate-500"></span>
+              <span class="ml-auto flex gap-2">
+                <button id="reg-csv" type="button" class="btn btn-secondary">Export CSV</button>
+                <button id="reg-print" type="button" class="btn btn-secondary">Print</button>
+              </span>
+            </div>
+            <div id="reg-board" class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-card"></div>
+          </section>
+
+          <section id="view-inputs" class="mt-6 hidden space-y-4">
+            <p class="max-w-3xl text-sm text-slate-500">
+              Month-specific pay items that come neither from the contract nor the time clock. Loan instalments, overtime
+              and holiday hours are picked up automatically. Changes apply the next time the month's payroll is generated,
+              and are locked once a payslip is finalised.
+            </p>
+            <div class="flex flex-wrap items-center gap-3">
+              <input id="in-month" type="month" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+              <button id="in-import-toggle" type="button" class="btn btn-secondary ml-auto">Paste from spreadsheet</button>
+            </div>
+            <div id="in-import" class="hidden rounded-xl border border-slate-200 bg-white p-4 shadow-card">
+              <p class="text-xs text-slate-500">
+                One employee per line, comma or tab separated:
+                <code>code, incentive, medical, other earnings, mess, other deductions, holiday hours</code> (leave a column blank for none).
+              </p>
+              <textarea id="in-paste" rows="5" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs" placeholder="PH-1003, 5000, 0, 0, 1200, 0, 16"></textarea>
+              <div class="mt-2 flex items-center gap-3"><button id="in-import-go" type="button" class="btn btn-primary">Import</button><span id="in-import-result" class="text-xs text-slate-500"></span></div>
+            </div>
+            <div id="in-board" class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-card"></div>
+          </section>
+
+          <section id="view-outputs" class="mt-6 hidden space-y-6">
+            <div class="flex flex-wrap items-center gap-3">
+              <input id="out-month" type="month" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+              <span id="out-note" class="text-xs text-slate-500"></span>
+            </div>
+
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+              <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 px-6 py-4">
+                <div><h2 class="text-sm font-semibold text-slate-900">Bank payment advice</h2>
+                <p class="text-xs text-slate-500">Net pay for finalised payslips, with each person's active bank account. Every download is logged.</p></div>
+                <button id="bank-csv" type="button" class="btn btn-primary ml-auto">Download bank file (CSV)</button>
+              </div>
+              <div id="bank-board"></div>
+            </div>
+
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+              <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 px-6 py-4">
+                <div><h2 class="text-sm font-semibold text-slate-900">Statutory deductions</h2>
+                <p class="text-xs text-slate-500">EOBI, provident fund and income tax withheld, with the identifiers needed to file them.</p></div>
+                <button id="stat-csv" type="button" class="btn btn-secondary ml-auto">Export CSV</button>
+              </div>
+              <div id="stat-board" class="overflow-x-auto"></div>
+            </div>
+          </section>
+
+          <section id="view-settlements" class="mt-6 hidden space-y-6">
+            <p class="max-w-3xl text-sm text-slate-500">
+              Full-and-final bills for people who have left: the last month's salary pro-rated on a 26-day month, unavailed
+              leave encashed, leave taken beyond what accrued recovered, and any loan balance deducted.
+            </p>
+            <div id="settle-pending"></div>
+            <div id="settle-board" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"></div>
+          </section>
+
           <section id="view-arrears" class="mt-6 hidden space-y-6">
           <form id="arrears-form" class="hidden grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-card sm:grid-cols-2 lg:grid-cols-5">
             <label class="text-sm">
@@ -167,6 +239,12 @@
       </div>
     </main>
 
+    <div id="record-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-box wide" style="max-width:48rem;max-height:92vh;overflow:auto">
+        <div id="settle-body"></div>
+      </div>
+    </div>
+
     <!-- Confirm dialog for destructive/approval actions -->
     <div id="confirm-backdrop" class="fixed inset-0 z-[60] hidden bg-slate-900/40 no-print">
       <div class="flex min-h-full items-center justify-center p-4">
@@ -187,8 +265,11 @@
 
     <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2 no-print"></div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/payroll.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/payroll.js?v=20261009-0452"></script>
+    <script src="/js/payroll-register.js?v=20261009-0452"></script>
+    <script src="/js/payroll-settlement.js?v=20261009-0452"></script>
+    <script src="/js/payroll-outputs.js?v=20261009-0452"></script>
   </body>
 </html>

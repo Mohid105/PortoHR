@@ -11,6 +11,8 @@ router.use(authenticate, requireModule(MODULES.LEAVE));
 
 router.get('/meta', controller.meta);
 router.get('/balances', controller.balances);
+router.get('/statement', controller.statement);
+router.post('/adjustments', authorize(ROLES.HR_ADMIN), controller.createAdjustment);
 router.get('/calendar', controller.calendar);
 router.get('/', controller.list);
 router.post('/', controller.create);

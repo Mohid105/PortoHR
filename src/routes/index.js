@@ -19,11 +19,13 @@ const grievanceRoutes = require('./grievance.routes');
 const esignRoutes = require('./esign.routes');
 const assetsRoutes = require('./assets.routes');
 const analyticsRoutes = require('./analytics.routes');
+const reportsRoutes = require('./reports.routes');
 const adminRoutes = require('./admin.routes');
 const notificationsRoutes = require('./notifications.routes');
 const delegationsRoutes = require('./delegations.routes');
 const approvalsRoutes = require('./approvals.routes');
 const integrationsRoutes = require('./integrations.routes');
+const companyRoutes = require('./company.routes');
 const moduleRoutes = require('./modules.routes');
 
 const router = express.Router();
@@ -56,11 +58,13 @@ router.use('/grievance', grievanceRoutes);
 router.use('/esign', esignRoutes);
 router.use('/assets', assetsRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/reports', reportsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/delegations', delegationsRoutes);
 router.use('/approvals', approvalsRoutes);
 router.use('/integrations', integrationsRoutes);
+router.use('/company', companyRoutes);
 moduleRoutes.forEach(({ path, router: moduleRouter }) => router.use(path, moduleRouter));
 
 module.exports = router;

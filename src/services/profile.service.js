@@ -3,6 +3,8 @@
 const FamilyMember = require('../models/FamilyMember');
 const Address = require('../models/Address');
 const Qualification = require('../models/Qualification');
+const WorkExperience = require('../models/WorkExperience');
+const EmployeeReward = require('../models/EmployeeReward');
 const EmployeeDocument = require('../models/EmployeeDocument');
 const BankAccount = require('../models/BankAccount');
 const StatutoryEnrollment = require('../models/StatutoryEnrollment');
@@ -43,10 +45,12 @@ async function loadProfileExtras(employee, options) {
   const personId = employee.person;
   const employeeId = employee._id;
 
-  const [family, addresses, qualifications, documents, banks, statutory, audit] = await Promise.all([
+  const [family, addresses, qualifications, experience, rewards, documents, banks, statutory, audit] = await Promise.all([
     FamilyMember.find({ person: personId }).sort({ isEmergency: -1, name: 1 }),
     Address.find({ person: personId }).sort({ type: 1, createdAt: -1 }),
     Qualification.find({ person: personId }).sort({ issuedOn: -1 }),
+    WorkExperience.find({ person: personId }).sort({ toYear: -1, fromYear: -1 }),
+    EmployeeReward.find({ employee: employeeId }).sort({ awardedOn: -1 }),
     EmployeeDocument.find({ employee: employeeId }).sort({ type: 1, version: -1 }),
     BankAccount.find({ employee: employeeId }).sort({ createdAt: -1 }),
     StatutoryEnrollment.find({ employee: employeeId }).sort({ scheme: 1, createdAt: -1 }),
@@ -60,6 +64,8 @@ async function loadProfileExtras(employee, options) {
     family: family.map(present),
     addresses: addresses.map(present),
     qualifications: qualifications.map(present),
+    experience: experience.map(present),
+    rewards: rewards.map(present),
     documents: documents.map((doc) => {
       const json = present(doc);
       json.expiringSoon = Boolean(json.expiresOn && new Date(json.expiresOn) <= soon);
@@ -116,6 +122,37 @@ async function saveQualification(personId, employeeId, body) {
   return present(row);
 }
 
+async function saveExperience(personId, employeeId, body) {
+  if (!body.organization) throw ApiError.badRequest('Organization is required');
+  const clean = (value) => (value === undefined || value === '' ? null : Number(value));
+  const fields = {
+    organization: body.organization,
+    designation: body.designation,
+    leavingCause: body.leavingCause,
+    description: body.description,
+    fromYear: clean(body.fromYear),
+    toYear: clean(body.toYear),
+  };
+  if (fields.fromYear && fields.toYear && fields.toYear < fields.fromYear) {
+    throw ApiError.badRequest('The end year cannot be before the start year');
+  }
+  const row = await WorkExperience.create(Object.assign(fields, { person: personId, employee: employeeId }));
+  return present(row);
+}
+
+async function saveReward(employeeId, userId, body) {
+  if (!body.reward) throw ApiError.badRequest('Name the reward or award');
+  const row = await EmployeeReward.create({
+    employee: employeeId,
+    authority: body.authority || '',
+    reward: body.reward,
+    description: body.description || '',
+    awardedOn: body.awardedOn || new Date(),
+    recordedBy: userId,
+  });
+  return present(row);
+}
+
 async function saveDocument(employeeId, personId, userId, body) {
   if (!body.type) throw ApiError.badRequest('Document type is required');
   const latest = await EmployeeDocument.findOne({ employee: employeeId, type: body.type }).sort({ version: -1 });
@@ -149,6 +186,7 @@ async function saveBank(employee, user, body) {
     method: body.method || 'bank_transfer',
     bankName: body.bankName || '',
     branch: body.branch || '',
+    city: body.city || '',
     accountTitle: body.accountTitle || '',
     accountNumber: body.accountNumber || '',
     iban: body.iban || '',
@@ -305,6 +343,8 @@ module.exports = {
   saveFamily,
   saveAddress,
   saveQualification,
+  saveExperience,
+  saveReward,
   saveDocument,
   saveBank,
   decideBank,

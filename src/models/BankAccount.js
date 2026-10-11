@@ -18,6 +18,7 @@ const bankAccountSchema = new mongoose.Schema(
     method: { type: String, enum: PAYMENT_METHODS, default: 'bank_transfer' },
     bankName: { type: String, trim: true, default: '' },
     branch: { type: String, trim: true, default: '' },
+    city: { type: String, trim: true, default: '' },
     accountTitle: { type: String, trim: true, default: '' },
     accountNumber: { type: String, trim: true, default: '' },
     iban: { type: String, trim: true, default: '' },

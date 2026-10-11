@@ -1,7 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { CURRENCIES, SHIFT_TYPES } = require('../config/hr');
+const { CURRENCIES } = require('../config/hr');
 const { PAYSLIP_STATUSES } = require('../config/payroll');
 
 /**
@@ -46,7 +46,7 @@ const payslipSchema = new mongoose.Schema(
       department: String,
       team: String,
       employmentType: String,
-      shiftType: { type: String, enum: SHIFT_TYPES },
+      shiftType: { type: String, trim: true },
       dateOfJoining: Date,
       contractedBasic: money,
       contractedAllowances: { type: [lineSchema], default: [] },
@@ -67,6 +67,12 @@ const payslipSchema = new mongoose.Schema(
       leaveDays: { type: Number, default: 0 },
       lwpDays: { type: Number, default: 0 },
       restDays: { type: Number, default: 0 },
+      holidayDays: { type: Number, default: 0 },
+      missedPunchDays: { type: Number, default: 0 },
+      lateCount: { type: Number, default: 0 },
+      latePenaltyDays: { type: Number, default: 0 },
+      paymentDays: { type: Number, default: 0 },
+      gazettedHolidayHours: { type: Number, default: 0 },
       recordedDays: { type: Number, default: 0 },
       inProgressDays: { type: Number, default: 0 },
       hoursWorked: { type: Number, default: 0 },
@@ -77,9 +83,10 @@ const payslipSchema = new mongoose.Schema(
     rates: {
       hoursPerDay: { type: Number, default: 8 },
       perDayWage: money,
+      monthDivisor: { type: Number, default: 0 },
       hourlyRate: money,
       overtimeRate: money,
-      overtimeMultiplier: { type: Number, default: 1.5 },
+      overtimeMultiplier: { type: Number, default: 2 },
       prorationFactor: { type: Number, default: 1 },
     },
 
@@ -88,6 +95,11 @@ const payslipSchema = new mongoose.Schema(
       allowances: { type: [lineSchema], default: [] },
       totalAllowances: money,
       overtimePay: money,
+      gazettedHolidayPay: money,
+      medicalAllowance: money,
+      incentive: money,
+      otherEarnings: money,
+      adjustedGross: money,
       gross: money,
     },
 
@@ -95,11 +107,16 @@ const payslipSchema = new mongoose.Schema(
       absence: money,
       shortDay: money,
       lwp: money,
+      latePenalty: money,
       attendanceTotal: money,
       socialSecurity: money,
       socialSecurityBase: money,
       socialSecurityRate: { type: Number, default: 0 },
+      providentFund: money,
       incomeTax: money,
+      loanRecovery: money,
+      messCharges: money,
+      otherDeductions: money,
       total: money,
     },
 

@@ -6,190 +6,179 @@
     <title>Attendance · PortoHR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <link rel="stylesheet" href="/css/attendance.css?v=20261009-0452" />
   </head>
-  <!-- `invisible` is removed by shell.js once the session is verified. -->
   <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
     <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
       <div class="mx-auto max-w-7xl">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 class="text-2xl font-semibold tracking-tight">Attendance</h1>
-            <p class="mt-1 text-sm text-slate-500">
-              Clock in and out, and review your monthly time log.
-            </p>
+            <p id="page-sub" class="mt-1 text-sm text-slate-500">Clock in and out, see your month, and ask for corrections.</p>
           </div>
+          <p id="tz-note" class="amini"></p>
         </div>
 
-        <!-- ===================== CLOCK + LEAVE ===================== -->
-        <div class="mt-6 grid gap-4 lg:grid-cols-3">
-          <!-- Clock card -->
-          <section class="rounded-xl border border-slate-200 bg-white p-8 shadow-card lg:col-span-2">
-            <div class="flex flex-wrap items-start justify-between gap-6">
-              <div>
-                <p id="clock-date" class="text-sm text-slate-500">—</p>
-                <p id="clock-time" class="mt-1 text-5xl font-semibold tracking-tight tabular-nums text-slate-900">
-                  --:--:--
-                </p>
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                  <span id="clock-status" class="inline-flex items-center whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    Loading…
-                  </span>
-                  <span id="clock-shift" class="text-xs text-slate-500"></span>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-stretch gap-3">
-                <button
-                  id="clock-button"
-                  type="button"
-                  class="flex min-w-[13rem] items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled
-                >
-                  <svg id="clock-spinner" class="hidden h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                  </svg>
-                  <span id="clock-button-text">Loading…</span>
-                </button>
-                <p id="clock-hint" class="max-w-[13rem] text-center text-xs text-slate-500"></p>
-                <p id="punch-queue" class="hidden max-w-[13rem] text-center text-xs font-medium text-amber-700"></p>
-              </div>
-            </div>
-
-            <dl class="mt-8 grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 sm:grid-cols-4">
-              <div>
-                <dt class="text-xs text-slate-500">Clocked in</dt>
-                <dd id="today-in" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
-              </div>
-              <div>
-                <dt class="text-xs text-slate-500">Clocked out</dt>
-                <dd id="today-out" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
-              </div>
-              <div>
-                <dt class="text-xs text-slate-500">Worked today</dt>
-                <dd id="today-hours" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
-              </div>
-              <div>
-                <dt class="text-xs text-slate-500">Shift owes</dt>
-                <dd id="today-expected" class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">—</dd>
-              </div>
-            </dl>
+        <!-- ===================== TODAY ===================== -->
+        <div class="att-grid att-top mt-6">
+          <section class="acard apad" aria-label="Today">
+            <div class="ahead"><h2>Today</h2><span id="clk-status" class="pill ml-auto">Loading…</span></div>
+            <div id="clk-time" class="clk-time">--:--</div>
+            <p id="clk-date" class="mt-1 text-sm text-slate-500"></p>
+            <p id="clk-shift" class="mt-1 text-xs text-slate-500"></p>
+            <p id="clk-note" class="mt-3 hidden rounded-xl px-3 py-2 text-xs" style="background:var(--surface-alt)"></p>
+            <button id="clk-btn" type="button" class="clk-btn" disabled>Loading…</button>
+            <p id="clk-queue" class="mt-2 hidden text-center text-xs font-medium text-amber-700"></p>
+            <p class="mt-2 text-center"><button id="clk-undo" type="button" class="btn-ghost hidden">Undo my last punch</button></p>
+            <ul id="clk-punches" class="punch-list"></ul>
           </section>
 
-          <!-- Leave balance widget -->
-          <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-card">
-            <div class="flex items-center justify-between">
-              <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Leave balance</h2>
-              <a href="/leave.html" class="text-xs font-medium text-[#2054C9] hover:underline">Manage leave</a>
+          <section class="acard apad" aria-label="This month">
+            <div class="ahead">
+              <h2 id="sum-title">This month</h2>
+              <span id="sum-lock" class="pill hidden">Month locked</span>
+              <a href="/leave.html" class="btn-ghost ml-auto">Leave balance: <b id="sum-leave" class="ml-1">—</b></a>
             </div>
-
-            <p class="mt-5 flex items-baseline gap-1.5">
-              <span id="leave-available" class="text-4xl font-semibold tracking-tight text-slate-900">—</span>
-              <span class="text-sm text-slate-500">days available</span>
-            </p>
-
-            <div class="mt-5">
-              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div id="leave-bar" class="h-full rounded-full bg-slate-900 transition-all duration-500" style="width: 0%"></div>
-              </div>
-              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span><span id="leave-taken" class="font-medium text-slate-700">—</span> taken</span>
-                <span><span id="leave-entitlement" class="font-medium text-slate-700">—</span> entitlement</span>
-              </div>
-            </div>
-
-            <dl class="mt-6 space-y-3 border-t border-slate-100 pt-5">
-              <div class="flex items-center justify-between">
-                <dt class="text-sm text-slate-600">Taken this year</dt>
-                <dd id="leave-taken-2" class="text-sm font-semibold text-slate-900">—</dd>
-              </div>
-              <div class="flex items-center justify-between">
-                <dt class="text-sm text-slate-600">On leave this month</dt>
-                <dd id="leave-month" class="text-sm font-semibold text-slate-900">—</dd>
-              </div>
-              <div class="flex items-center justify-between">
-                <dt class="text-sm text-slate-600">Pending requests</dt>
-                <dd id="leave-pending" class="text-sm font-semibold text-slate-900">—</dd>
-              </div>
-            </dl>
+            <div id="sum-kpis" class="akpis"></div>
           </section>
         </div>
 
-        <!-- ===================== MONTH STATS ===================== -->
-        <div id="stat-tiles" class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
+        <!-- ===================== TABS ===================== -->
+        <div id="a-tabs" class="atabs" role="tablist">
+          <button type="button" class="atab is-active" data-tab="calendar">Calendar</button>
+          <button type="button" class="atab" data-tab="requests">Corrections <span id="req-count" class="cnt hidden">0</span></button>
+          <button type="button" class="atab hidden" data-tab="board" data-team>Team today</button>
+          <button type="button" class="atab hidden" data-tab="register" data-team>Monthly register</button>
+          <button type="button" class="atab hidden" data-tab="shifts" data-team>Shifts &amp; roster</button>
+          <button type="button" class="atab hidden" data-tab="tools" data-hr>Import, periods &amp; rules</button>
+        </div>
 
-        <!-- ===================== MONTH LOG ===================== -->
-        <section class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
-            <div>
-              <h2 class="text-sm font-semibold text-slate-900">Monthly log</h2>
-              <p id="log-subject" class="mt-0.5 text-xs text-slate-500">—</p>
+        <!-- Calendar -->
+        <section id="tab-calendar" class="acard apad">
+          <div class="ahead">
+            <h2 id="cal-title">—</h2>
+            <select id="cal-employee" class="hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" style="max-width:15rem"></select>
+            <span class="ml-auto flex items-center gap-1">
+              <button id="cal-prev" type="button" class="btn btn-secondary btn-sm" aria-label="Previous month">‹</button>
+              <button id="cal-today" type="button" class="btn btn-secondary btn-sm">This month</button>
+              <button id="cal-next" type="button" class="btn btn-secondary btn-sm" aria-label="Next month">›</button>
+            </span>
+          </div>
+          <div class="mb-3 flex flex-wrap gap-4">
+            <span class="lgd"><i style="background:var(--success)"></i>Present</span>
+            <span class="lgd"><i style="background:var(--coral)"></i>Absent, short or missed punch</span>
+            <span class="lgd"><i style="background:var(--sky)"></i>Leave</span>
+            <span class="lgd"><i style="background:var(--accent)"></i>Late · holiday · open</span>
+            <span class="lgd"><i style="background:var(--primary)"></i>Overtime</span>
+          </div>
+          <div id="cal-grid" class="cal"></div>
+          <p id="cal-foot" class="mt-4 text-xs text-slate-500"></p>
+        </section>
+
+        <!-- Corrections -->
+        <section id="tab-requests" class="hidden space-y-5">
+          <div class="flex flex-wrap items-center gap-3">
+            <p class="max-w-2xl text-sm text-slate-500">Forgot to punch, the clock was down, or you worked away from your desk? Ask for the day to be corrected. Your manager or HR decides.</p>
+            <button id="req-new" type="button" class="btn btn-primary ml-auto">New correction</button>
+          </div>
+          <div id="req-queue-card" class="acard hidden overflow-hidden"><div class="ahead apad" style="margin:0;padding-bottom:.4rem"><h2>Waiting for your decision</h2></div><div id="req-queue" class="tbl-wrap"></div></div>
+          <div class="acard overflow-hidden"><div class="ahead apad" style="margin:0;padding-bottom:.4rem"><h2>My requests</h2></div><div id="req-mine" class="tbl-wrap"></div></div>
+        </section>
+
+        <!-- Team board -->
+        <section id="tab-board" class="acard apad hidden">
+          <div class="ahead">
+            <h2>Who is in</h2>
+            <input id="board-date" type="date" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" />
+            <select id="board-dept" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"><option value="">All departments</option></select>
+            <input id="board-q" type="search" placeholder="Search name or code" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" />
+            <button id="board-refresh" type="button" class="btn btn-secondary btn-sm ml-auto">Refresh</button>
+          </div>
+          <div id="board-chips" class="chips"></div>
+          <div id="board-table" class="tbl-wrap mt-4"></div>
+        </section>
+
+        <!-- Register -->
+        <section id="tab-register" class="acard apad hidden">
+          <div class="ahead">
+            <h2>Monthly register</h2>
+            <input id="reg-month" type="month" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" />
+            <select id="reg-dept" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"><option value="">All departments</option></select>
+            <input id="reg-q" type="search" placeholder="Search name or code" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" />
+            <span id="reg-lock" class="pill hidden">Locked</span>
+            <span class="ml-auto flex gap-2"><button id="reg-csv" type="button" class="btn btn-secondary btn-sm">Export CSV</button><button id="reg-print" type="button" class="btn btn-secondary btn-sm">Print</button></span>
+          </div>
+          <p class="mb-3 text-xs text-slate-500"><b>P</b> present · <b>S</b> short day · <b>A</b> absent · <b>L</b> leave · <b>M</b> missed punch · <b>W</b> rest day · <b>H</b> holiday · underline = late · + = overtime. Click a name to open their calendar.</p>
+          <div id="reg-board" class="reg-wrap"></div>
+          <div id="reg-pager" class="mt-3 flex items-center gap-2 text-xs text-slate-500"></div>
+        </section>
+
+        <!-- Shifts and roster -->
+        <section id="tab-shifts" class="hidden space-y-5">
+          <div class="acard overflow-hidden">
+            <div class="ahead apad" style="margin:0;padding-bottom:.4rem"><h2>Shifts</h2><button id="shift-new" type="button" class="btn btn-secondary btn-sm ml-auto hidden" data-hr>Add shift</button></div>
+            <div id="shift-board" class="tbl-wrap"></div>
+          </div>
+          <div class="acard apad">
+            <div class="ahead"><h2>Assign a shift for a period</h2></div>
+            <p class="mb-3 text-xs text-slate-500">Puts people on a different shift between two dates (rotations, cover). Their usual shift applies outside the period.</p>
+            <form id="roster-form" class="field-row" novalidate>
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">Department</span><select id="ro-dept" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">Choose…</option></select></label>
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">…or one person</span><select id="ro-emp" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">Choose…</option></select></label>
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">From</span><input id="ro-from" type="date" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">To</span><input id="ro-to" type="date" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" /></label>
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">Shift</span><select id="ro-shift" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select></label>
+              <div class="flex items-end"><button type="submit" class="btn btn-primary">Assign</button></div>
+            </form>
+            <p id="ro-error" class="mt-2 hidden text-sm text-red-600"></p>
+          </div>
+          <div class="acard overflow-hidden">
+            <div class="ahead apad" style="margin:0;padding-bottom:.4rem"><h2>Upcoming and current assignments</h2></div>
+            <div id="roster-board" class="tbl-wrap"></div>
+          </div>
+        </section>
+
+        <!-- Import, periods, rules -->
+        <section id="tab-tools" class="hidden space-y-5">
+          <div class="acard apad">
+            <div class="ahead"><h2>Import punches from a time clock</h2><button id="imp-template" type="button" class="btn btn-secondary btn-sm ml-auto">Download template</button></div>
+            <p class="mb-3 text-xs text-slate-500">Export the punch log from your biometric device as CSV (employee code, date and time, optionally IN/OUT). Check it first; nothing is stored until you confirm, and a whole import can be undone.</p>
+            <div class="field-row">
+              <label class="text-sm"><span class="block text-xs font-medium text-slate-500">CSV file</span><input id="imp-file" type="file" accept=".csv,.txt,text/csv" class="mt-1 w-full text-sm" /></label>
             </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <select
-                id="employee-picker"
-                class="hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-              ></select>
-
-              <div class="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-0.5">
-                <button id="month-prev" type="button" class="rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Previous month">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-                </button>
-                <span id="month-label" class="min-w-[7.5rem] text-center text-sm font-medium text-slate-700">—</span>
-                <button id="month-next" type="button" class="rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Next month">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                </button>
-              </div>
-            </div>
+            <textarea id="imp-paste" rows="3" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs" placeholder="Employee Code,Date Time,Direction&#10;PH-1004,2026-10-05 08:57:12,IN"></textarea>
+            <div class="mt-3 flex flex-wrap items-center gap-3"><button id="imp-check" type="button" class="btn btn-secondary">Check file</button><button id="imp-go" type="button" class="btn btn-primary hidden">Import</button><span id="imp-result" class="text-sm text-slate-600"></span></div>
+            <div id="imp-problems" class="mt-3"></div>
+            <h3 class="mt-6 text-xs font-semibold uppercase tracking-wider text-slate-400">Recent imports</h3>
+            <div id="imp-batches" class="tbl-wrap mt-2"></div>
           </div>
 
-          <!-- Legend -->
-          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-slate-100 bg-slate-50/60 px-6 py-2.5 text-xs text-slate-500">
-            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Overtime</span>
-            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span>Short day or absence</span>
-            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Paid leave</span>
-            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-slate-300"></span>Rest day</span>
+          <div class="acard apad">
+            <div class="ahead"><h2>Closing a month</h2></div>
+            <p class="mb-3 text-xs text-slate-500">Lock a month once its attendance is final and payroll is being run. Nothing in a locked month can be punched, imported or corrected until it is reopened.</p>
+            <div class="flex flex-wrap items-center gap-3"><input id="lock-month" type="month" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" /><button id="lock-go" type="button" class="btn btn-primary">Lock month</button><span id="lock-note" class="text-sm text-slate-600"></span></div>
+            <div id="lock-board" class="tbl-wrap mt-4"></div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
-              <thead class="bg-slate-50">
-                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th scope="col" class="px-6 py-3.5">Date</th>
-                  <th scope="col" class="px-6 py-3.5">Time in</th>
-                  <th scope="col" class="px-6 py-3.5">Time out</th>
-                  <th scope="col" class="px-6 py-3.5 text-right">Worked</th>
-                  <th scope="col" class="px-6 py-3.5 text-right">Overtime</th>
-                  <th scope="col" class="px-6 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody id="attendance-rows" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
-
-          <div id="log-error" class="hidden px-6 py-16 text-center">
-            <h3 class="text-sm font-semibold text-red-700">Could not load attendance</h3>
-            <p id="log-error-text" class="mx-auto mt-1 max-w-sm text-sm text-slate-500"></p>
-          </div>
-
-          <div class="border-t border-slate-200 px-6 py-3">
-            <p id="log-summary" class="text-xs text-slate-500">Loading…</p>
+          <div class="acard apad">
+            <div class="ahead"><h2>Attendance rules</h2></div>
+            <form id="policy-form" class="grid gap-4" novalidate></form>
           </div>
         </section>
       </div>
     </main>
 
+    <div id="att-modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-box wide" id="att-modal-body"></div></div>
     <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2"></div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/attendance.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/csv.js?v=20261009-0452"></script>
+    <script src="/js/attendance.js?v=20261009-0452"></script>
+    <script src="/js/attendance-team.js?v=20261009-0452"></script>
+    <script src="/js/attendance-admin.js?v=20261009-0452"></script>
   </body>
 </html>

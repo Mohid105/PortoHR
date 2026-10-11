@@ -287,4 +287,35 @@ const createHoliday = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { meta, balances, list, calendar, getOne, create, decide, cancel, createHoliday };
+/** GET /api/leave/statement?employee=&year= — the yearly leave record */
+const statement = asyncHandler(async (req, res) => {
+  const employee = await resolveTargetEmployee(req);
+  const year = Number(req.query.year) || new Date().getUTCFullYear();
+  if (year < 2000 || year > 2100) throw ApiError.badRequest('Year is out of range');
+  const result = await leave.statementFor(employee, year);
+  res.json({
+    success: true,
+    employee: {
+      id: String(employee._id),
+      employeeCode: employee.employeeCode,
+      fullName: employee.fullName,
+      designation: employee.designation,
+      department: employee.department,
+      team: employee.team,
+      dateOfJoining: employee.dateOfJoining,
+    },
+    ...result,
+  });
+});
+
+/** POST /api/leave/adjustments — HR credits or corrects someone's balance */
+const createAdjustment = asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  if (!mongoose.isValidObjectId(body.employee)) throw ApiError.badRequest('Choose an employee');
+  const employee = await Employee.findById(body.employee);
+  if (!employee) throw ApiError.notFound('Employee not found');
+  const adjustment = await leave.createAdjustment(employee, body, req.user);
+  res.status(201).json({ success: true, adjustment });
+});
+
+module.exports = { statement, createAdjustment, meta, balances, list, calendar, getOne, create, decide, cancel, createHoliday };

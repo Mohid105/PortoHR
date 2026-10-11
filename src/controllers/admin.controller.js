@@ -207,7 +207,61 @@ const cancelMyDelegation = asyncHandler(async (req, res) => {
   res.json({ success: true, delegation: row });
 });
 
+const access = require('../services/access.service');
+
+const users = asyncHandler(async (_req, res) => {
+  res.json({ success: true, users: await access.listUsers() });
+});
+
+const unlinkedEmployees = asyncHandler(async (_req, res) => {
+  res.json({ success: true, employees: await access.listUnlinked() });
+});
+
+const createUser = asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  if (!body.employee) throw ApiError.badRequest('Choose an employee to give a login to');
+  const result = await access.createLogin(body.employee, body);
+  await audit.record(req, { action: 'user_create', objectType: 'User', objectId: result.user.id, summary: `Login created for ${result.user.fullName} (${result.user.roleLabel})` });
+  res.status(201).json({ success: true, ...result });
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const user = await access.updateUser(req.params.id, req.body || {}, req.user);
+  await audit.record(req, { action: 'user_update', objectType: 'User', objectId: user.id, summary: `${user.fullName}: ${user.roleLabel}, ${user.isActive ? 'active' : 'deactivated'}` });
+  res.json({ success: true, user });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const result = await access.resetPassword(req.params.id, req.user);
+  await audit.record(req, { action: 'user_password_reset', objectType: 'User', objectId: result.user.id, summary: `Password reset for ${result.user.fullName}` });
+  res.json({ success: true, ...result });
+});
+
+const unlockUser = asyncHandler(async (req, res) => {
+  const user = await access.unlock(req.params.id);
+  await audit.record(req, { action: 'user_unlock', objectType: 'User', objectId: user.id, summary: `Unlocked ${user.fullName}` });
+  res.json({ success: true, user });
+});
+
+const revokeSessions = asyncHandler(async (req, res) => {
+  const user = await access.revokeSessions(req.params.id);
+  await audit.record(req, { action: 'sessions_revoked', objectType: 'User', objectId: user.id, summary: `Ended all sessions for ${user.fullName}` });
+  res.json({ success: true, user });
+});
+
+const securityEvents = asyncHandler(async (req, res) => {
+  res.json({ success: true, events: await access.listEvents(req.query || {}) });
+});
+
 module.exports = {
+  unlockUser,
+  revokeSessions,
+  securityEvents,
+  users,
+  unlinkedEmployees,
+  createUser,
+  updateUser,
+  resetPassword,
   meta,
   saveSettings,
   permissions,

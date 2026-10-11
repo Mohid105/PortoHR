@@ -1,7 +1,6 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { LOCATIONS } = require('../config/hr');
 
 const json = {
   virtuals: true,
@@ -26,7 +25,8 @@ const holidaySchema = new mongoose.Schema(
     },
     location: {
       type: String,
-      enum: { values: ['', ...LOCATIONS], message: '{VALUE} is not a recognised location' },
+      trim: true,
+      maxlength: 80,
       default: '',
     },
     isOptional: { type: Boolean, default: false },

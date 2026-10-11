@@ -9,7 +9,7 @@ const { ROLE_LABELS } = require('../config/roles');
 const moduleAccess = require('../services/moduleAccess');
 
 function signToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role }, env.jwtSecret, {
+  return jwt.sign({ sub: user.id, role: user.role, tv: user.tokenVersion || 0 }, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn,
   });
 }
@@ -37,6 +37,14 @@ const authenticate = asyncHandler(async (req, _res, next) => {
   const user = await User.findById(payload.sub);
   if (!user) throw ApiError.unauthorized('Account no longer exists');
   if (!user.isActive) throw ApiError.forbidden('Account has been deactivated');
+
+  if (user.passwordChangedAt && payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
+    throw ApiError.unauthorized('Password was changed, please sign in again');
+  }
+
+  if ((payload.tv || 0) !== (user.tokenVersion || 0)) {
+    throw ApiError.unauthorized('Your session was ended, please sign in again');
+  }
 
   req.user = user;
   return next();

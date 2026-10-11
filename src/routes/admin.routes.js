@@ -37,4 +37,13 @@ router.delete('/keys/:id', controller.revokeKey);
 router.get('/audit', controller.auditLog);
 router.get('/directory', controller.directory);
 
+router.get('/users', controller.users);
+router.get('/users/unlinked', controller.unlinkedEmployees);
+router.post('/users', controller.createUser);
+router.patch('/users/:id', controller.updateUser);
+router.post('/users/:id/reset-password', controller.resetPassword);
+router.post('/users/:id/unlock', controller.unlockUser);
+router.post('/users/:id/revoke-sessions', controller.revokeSessions);
+router.get('/security/events', controller.securityEvents);
+
 module.exports = router;

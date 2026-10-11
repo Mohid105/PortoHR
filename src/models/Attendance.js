@@ -1,7 +1,6 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { SHIFT_TYPES } = require('../config/hr');
 const { SHIFT_STATUSES } = require('../config/attendance');
 
 const attendanceSchema = new mongoose.Schema(
@@ -23,7 +22,7 @@ const attendanceSchema = new mongoose.Schema(
      * The shift is snapshotted at clock-in. Moving someone onto a new roster
      * later must not silently rewrite what their past days were measured against.
      */
-    shiftType: { type: String, enum: SHIFT_TYPES, default: 'general' },
+    shiftType: { type: String, trim: true, default: 'general', maxlength: 24 },
     expectedHours: { type: Number, default: 0, min: 0 },
 
     hoursWorked: { type: Number, default: 0, min: [0, 'Hours worked cannot be negative'] },
@@ -38,6 +37,18 @@ const attendanceSchema = new mongoose.Schema(
     },
 
     notes: { type: String, trim: true, default: '', maxlength: 200 },
+
+    /** Minutes after the shift start (beyond the grace period) the first punch came. */
+    lateMinutes: { type: Number, default: 0, min: 0 },
+    /** Minutes before the shift end (beyond grace) the last punch came. */
+    earlyExitMinutes: { type: Number, default: 0, min: 0 },
+    punchCount: { type: Number, default: 0, min: 0 },
+    /** late, early_exit, missed_punch, manual, regularized, rest_day_work, ... */
+    flags: { type: [String], default: [] },
+    /** punch = built from AttendancePunch rows; manual = set by HR; leave = posted by Leave. */
+    source: { type: String, enum: ['legacy', 'punch', 'manual', 'leave'], default: 'legacy' },
+    /** A locked day is never rebuilt from punches (set when HR overrides it). */
+    locked: { type: Boolean, default: false },
 
     /** Set when HR overrides a day rather than the employee clocking it. */
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

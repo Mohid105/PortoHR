@@ -12,8 +12,9 @@ const json = {
 };
 
 /**
- * Digital personnel-file index. Files themselves stay as a reference URL in
- * this release; versions are new rows so a replace never overwrites history.
+ * Digital personnel-file index. Each row can hold an uploaded file (stored in
+ * GridFS) and/or a reference; versions are new rows so a replace never
+ * overwrites history.
  */
 const documentSchema = new mongoose.Schema(
   {
@@ -29,6 +30,14 @@ const documentSchema = new mongoose.Schema(
     verificationStatus: { type: String, enum: DOCUMENT_STATUSES, default: 'unverified' },
     confidentiality: { type: String, enum: CONFIDENTIALITY, default: 'general' },
     notes: { type: String, trim: true, default: '', maxlength: 300 },
+    /** The stored file, once one has been attached (GridFS). Immutable: a replacement is a new version. */
+    file: {
+      id: { type: mongoose.Schema.Types.ObjectId, default: null },
+      name: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+      contentType: { type: String, default: '' },
+      uploadedAt: { type: Date, default: null },
+    },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true, toJSON: json, toObject: { virtuals: true } }

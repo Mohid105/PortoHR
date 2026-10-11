@@ -8,7 +8,7 @@ const SHIFT_STATUSES = ['present', 'short_day', 'absent', 'on_leave'];
  * day, a day before the employee joined, a day still to come, or a shift that
  * has been clocked into but not out of yet.
  */
-const DERIVED_STATUSES = ['in_progress', 'rest_day', 'upcoming', 'not_employed'];
+const DERIVED_STATUSES = ['in_progress', 'missing_punch', 'rest_day', 'holiday', 'upcoming', 'not_employed'];
 
 const STATUS_LABELS = {
   present: 'Present',
@@ -16,7 +16,9 @@ const STATUS_LABELS = {
   absent: 'Absent',
   on_leave: 'On leave',
   in_progress: 'Clocked in',
+  missing_punch: 'Missed punch',
   rest_day: 'Rest day',
+  holiday: 'Gazetted holiday',
   upcoming: 'Upcoming',
   not_employed: 'Before joining',
 };

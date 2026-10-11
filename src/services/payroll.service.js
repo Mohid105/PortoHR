@@ -15,6 +15,7 @@ const { toMinor, multiply, divide, sum, roundMinor } = require('../utils/money')
 function buildPeriod(employee, range, now) {
   const restDays = employee.restDays || [];
   const joined = employee.dateOfJoining ? attendanceDate(employee.dateOfJoining) : null;
+  const left = employee.lastWorkingDay ? attendanceDate(employee.lastWorkingDay) : null;
   const today = attendanceDate(now);
 
   let calendarDays = 0;
@@ -31,7 +32,7 @@ function buildPeriod(employee, range, now) {
     if (restDays.indexOf(weekdayKey(date)) !== -1) continue;
 
     workingDays += 1;
-    if (!joined || date >= joined) employedWorkingDays += 1;
+    if ((!joined || date >= joined) && (!left || date <= left)) employedWorkingDays += 1;
   }
 
   return {
@@ -97,11 +98,19 @@ function annualisedIncomeTax(monthlyTaxableMinor, bands) {
  * payroll run auditable and re-runnable.
  *
  * EVERY amount returned is an integer number of minor units (cents).
+ *
+ * `input.variable` carries the month-specific items that do not come from the
+ * contract or the time clock, already in minor units:
+ *   incentive, medicalAllowance, otherEarnings   — extra pay
+ *   loanRecovery, messCharges, otherDeductions   — recoveries
+ *   gazettedHolidayHours                         — hours worked on public holidays
+ *   providentFund                                — true when enrolled in the PF scheme
  */
 function computePayslip(input) {
   const employee = input.employee;
   const period = input.period;
   const attendance = input.attendance || {};
+  const variable = input.variable || {};
   const config = input.config || PAYROLL;
   const warnings = [];
 
@@ -123,11 +132,13 @@ function computePayslip(input) {
       ? shift.expectedHours || config.standardHoursPerDay
       : config.standardHoursPerDay;
 
-  const perDayWage = divide(contractedGross, period.workingDays);
+  const monthDivisor = config.perDayBasis === 'fixed_divisor' ? config.monthDivisor : period.workingDays;
+  const perDayWage = divide(contractedGross, monthDivisor);
   const hourlyRate = divide(perDayWage, hoursPerDay);
   const overtimeRate = multiply(hourlyRate, config.overtimeMultiplier);
+  const holidayRate = multiply(hourlyRate, config.gazettedHolidayMultiplier || config.overtimeMultiplier);
 
-  if (!period.workingDays) {
+  if (!monthDivisor) {
     warnings.push('This month has no rostered working days, so no daily rate could be derived.');
   }
 
@@ -140,14 +151,29 @@ function computePayslip(input) {
   }));
   const totalAllowances = sum(allowances.map((a) => a.amount));
 
-  const overtimeHours = Number(attendance.overtimeHours) || 0;
+  const overtimeEligible =
+    (config.overtimeExcludedCategories || []).indexOf(employee.employeeCategory) === -1;
+  const overtimeHours = overtimeEligible ? Number(attendance.overtimeHours) || 0 : 0;
+  const gazettedHolidayHours = overtimeEligible
+    ? Number(variable.gazettedHolidayHours !== undefined ? variable.gazettedHolidayHours : attendance.gazettedHolidayHours) || 0
+    : 0;
   const overtimePay = multiply(overtimeRate, overtimeHours);
-  const grossEarnings = basic + totalAllowances + overtimePay;
+  const gazettedHolidayPay = multiply(holidayRate, gazettedHolidayHours);
+
+  const incentive = Math.max(0, Math.round(Number(variable.incentive) || 0));
+  const medicalAllowance = Math.max(0, Math.round(Number(variable.medicalAllowance) || 0));
+  const otherEarnings = Math.max(0, Math.round(Number(variable.otherEarnings) || 0));
+
+  const grossEarnings =
+    basic + totalAllowances + overtimePay + gazettedHolidayPay + incentive + medicalAllowance + otherEarnings;
 
   if (period.employedWorkingDays < period.workingDays) {
     warnings.push(
       `Salary prorated to ${period.employedWorkingDays} of ${period.workingDays} working days because the employee joined during the month.`
     );
+  }
+  if (!overtimeEligible && (Number(attendance.overtimeHours) || 0) > 0) {
+    warnings.push('Overtime hours were recorded but this employee category earns no overtime, so none was paid.');
   }
 
   // ---- Attendance deductions ----
@@ -155,12 +181,14 @@ function computePayslip(input) {
   const shortfallHours = Number(attendance.shortfallHours) || 0;
   const lwpDays = Number(attendance.lwpDays) || 0;
 
+  const latePenaltyDays = Number(attendance.latePenaltyDays) || 0;
   let absence = multiply(perDayWage, absentDays);
   let shortDay = multiply(hourlyRate, shortfallHours);
   let lwp = multiply(perDayWage, lwpDays);
-  let attendanceDeductions = absence + shortDay + lwp;
+  let latePenalty = multiply(perDayWage, latePenaltyDays);
+  let attendanceDeductions = absence + shortDay + lwp + latePenalty;
 
-  // Pay can fall to zero but never below it, and the two lines must still add
+  // Pay can fall to zero but never below it, and the lines must still add
   // up to the capped total, so the surplus is taken off proportionally.
   if (attendanceDeductions > grossEarnings) {
     warnings.push(
@@ -168,7 +196,8 @@ function computePayslip(input) {
     );
     absence = multiply(absence, grossEarnings / attendanceDeductions);
     shortDay = multiply(shortDay, grossEarnings / attendanceDeductions);
-    lwp = grossEarnings - absence - shortDay;
+    latePenalty = multiply(latePenalty, grossEarnings / attendanceDeductions);
+    lwp = grossEarnings - absence - shortDay - latePenalty;
     attendanceDeductions = grossEarnings;
   }
 
@@ -176,6 +205,14 @@ function computePayslip(input) {
     warnings.push(
       'No attendance was recorded for this month, so every working day counts as an unpaid absence.'
     );
+  }
+  if (attendance.missedPunchDays) {
+    warnings.push(
+      `${attendance.missedPunchDays} day(s) have a missed punch and were counted as absent. Correct them in Attendance, then regenerate this payslip.`
+    );
+  }
+  if (latePenaltyDays) {
+    warnings.push(`${attendance.lateCount} late arrival(s) cost ${latePenaltyDays} day(s) of pay under the attendance policy.`);
   }
   if (attendance.inProgressDays) {
     warnings.push(
@@ -186,17 +223,59 @@ function computePayslip(input) {
     warnings.push('The month is not over yet — these figures will change as more days are worked.');
   }
 
-  // ---- Statutory deductions ----
+  // Pay for the contract after absences, before overtime and extras: the
+  // "adjusted gross" line of a salary sheet.
+  const adjustedGross = Math.max(0, basic + totalAllowances - attendanceDeductions);
   const taxableGross = grossEarnings - attendanceDeductions;
 
-  const ceiling = toMinor(config.socialSecurity.monthlyCeiling);
-  const socialSecurityBase = Math.min(taxableGross, ceiling);
-  const socialSecurity = multiply(socialSecurityBase, config.socialSecurity.rate);
+  // ---- Statutory deductions ----
+  const statutory = !config.statutoryCurrency || currency === config.statutoryCurrency;
+  if (!statutory) {
+    warnings.push(`EOBI, provident fund and income tax are only calculated for ${config.statutoryCurrency} salaries, so none were taken for this ${currency} salary.`);
+  }
+  const ssConfig = config.socialSecurity;
+  const ssBaseWage = toMinor(ssConfig.monthlyCeiling);
+  const socialSecurityBase = ssConfig.flatOnCeiling
+    ? taxableGross > 0
+      ? ssBaseWage
+      : 0
+    : Math.min(taxableGross, ssBaseWage);
+  const socialSecurity = statutory ? multiply(socialSecurityBase, ssConfig.rate) : 0;
 
-  const incomeTaxBase = taxableGross - socialSecurity;
-  const incomeTax = annualisedIncomeTax(incomeTaxBase, config.incomeTax.annualBands);
+  const pfConfig = config.providentFund;
+  const providentFund =
+    statutory && variable.providentFund && pfConfig ? multiply(Math.max(0, basic - attendanceDeductions), pfConfig.employeeRate) : 0;
 
-  const totalDeductions = attendanceDeductions + socialSecurity + incomeTax.monthly;
+  const incomeTaxBase =
+    taxableGross -
+    (config.incomeTax.excludeOvertime ? overtimePay + gazettedHolidayPay : 0) -
+    socialSecurity -
+    (pfConfig && pfConfig.taxDeductible ? providentFund : 0);
+  const incomeTax = statutory
+    ? annualisedIncomeTax(incomeTaxBase, config.incomeTax.annualBands)
+    : { annualTaxable: 0, annual: 0, monthly: 0, bands: [] };
+
+  // ---- Recoveries, trimmed so net pay never goes below zero ----
+  let loanRecovery = Math.max(0, Math.round(Number(variable.loanRecovery) || 0));
+  let messCharges = Math.max(0, Math.round(Number(variable.messCharges) || 0));
+  let otherDeductions = Math.max(0, Math.round(Number(variable.otherDeductions) || 0));
+
+  const fixedDeductions = socialSecurity + providentFund + incomeTax.monthly;
+  let available = Math.max(0, taxableGross - fixedDeductions);
+  const fit = (amount, label) => {
+    const taken = Math.min(amount, available);
+    if (taken < amount) {
+      warnings.push(`${label} of ${(amount / 100).toFixed(2)} could not be fully recovered: only ${(taken / 100).toFixed(2)} was available.`);
+    }
+    available -= taken;
+    return taken;
+  };
+  loanRecovery = fit(loanRecovery, 'Loan / advance recovery');
+  messCharges = fit(messCharges, 'Mess charges');
+  otherDeductions = fit(otherDeductions, 'Other deductions');
+
+  const totalDeductions =
+    attendanceDeductions + socialSecurity + providentFund + incomeTax.monthly + loanRecovery + messCharges + otherDeductions;
   const netPay = grossEarnings - totalDeductions;
 
   return {
@@ -222,14 +301,24 @@ function computePayslip(input) {
       leaveDays: Number(attendance.leaveDays) || 0,
       lwpDays,
       restDays: Number(attendance.restDays) || 0,
+      holidayDays: Number(attendance.holidayDays) || 0,
       recordedDays: Number(attendance.recordedDays) || 0,
       inProgressDays: Number(attendance.inProgressDays) || 0,
+      missedPunchDays: Number(attendance.missedPunchDays) || 0,
+      lateCount: Number(attendance.lateCount) || 0,
+      latePenaltyDays,
       hoursWorked: Number(attendance.hoursWorked) || 0,
       overtimeHours,
+      gazettedHolidayHours,
       shortfallHours,
+      paymentDays: Math.max(
+        0,
+        Math.round(((monthDivisor || 0) * proration - absentDays - lwpDays - (hoursPerDay ? shortfallHours / hoursPerDay : 0)) * 100) / 100
+      ),
     },
     rates: {
       hoursPerDay,
+      monthDivisor: monthDivisor || 0,
       perDayWage,
       hourlyRate,
       overtimeRate,
@@ -241,17 +330,27 @@ function computePayslip(input) {
       allowances,
       totalAllowances,
       overtimePay,
+      gazettedHolidayPay,
+      medicalAllowance,
+      incentive,
+      otherEarnings,
+      adjustedGross,
       gross: grossEarnings,
     },
     deductions: {
       absence,
       shortDay,
       lwp,
+      latePenalty,
       attendanceTotal: attendanceDeductions,
       socialSecurity,
       socialSecurityBase,
-      socialSecurityRate: config.socialSecurity.rate,
+      socialSecurityRate: ssConfig.rate,
+      providentFund,
       incomeTax: incomeTax.monthly,
+      loanRecovery,
+      messCharges,
+      otherDeductions,
       total: totalDeductions,
     },
     incomeTaxDetail: {
@@ -279,13 +378,60 @@ async function gatherAttendance(employee, range) {
     date: { $gte: range.start, $lt: range.end },
   }).sort({ date: 1 });
 
-  const { summary } = buildMonth(employee, range, records, new Date());
+  const holidays = await leave.holidayKeys(range.start, new Date(range.end.getTime() - 86400000), employee.location);
+  const { summary } = buildMonth(employee, range, records, new Date(), holidays);
   const lwpDays = await leave.lwpDaysInRange(employee, range);
+  const policy = await require('./attendanceOps.service').getPolicy();
+  const latePenaltyDays = require('./attendanceEngine').latePenaltyDays(summary.lateCount || 0, policy);
   return Object.assign({}, summary, {
+    // A day with a missed punch is not paid until it is corrected; HR is warned on the payslip.
+    absentDays: summary.absentDays + (summary.missedPunchDays || 0),
+    latePenaltyDays,
+    gazettedHolidayHours: summary.holidayWorkedHours,
     recordedDays: records.length,
     lwpDays,
     leaveDays: Math.max(0, (summary.leaveDays || 0) - lwpDays),
   });
 }
 
-module.exports = { buildPeriod, annualisedIncomeTax, computePayslip, gatherAttendance, WEEKDAYS };
+/**
+ * The month-specific items for one employee: keyed-in inputs, the loan
+ * instalment due, and whether the provident fund applies. All in minor units.
+ */
+async function gatherVariable(employee, range) {
+  const PayrollInput = require('../models/PayrollInput');
+  const Loan = require('../models/Loan');
+  const StatutoryEnrollment = require('../models/StatutoryEnrollment');
+  const { instalmentDue } = require('./loanMath');
+
+  const [input, loans, pf] = await Promise.all([
+    PayrollInput.findOne({ employee: employee._id, month: range.month }),
+    Loan.find({ employee: employee._id, status: 'approved' }),
+    StatutoryEnrollment.findOne({
+      employee: employee._id,
+      scheme: 'provident_fund',
+      status: 'active',
+      covered: true,
+      effectiveFrom: { $lt: range.end },
+      $or: [{ effectiveTo: null }, { effectiveTo: { $gte: range.start } }],
+    }),
+  ]);
+
+  const loanRecovery = loans.reduce((total, loan) => total + instalmentDue(loan, range.month), 0);
+  const row = input || {};
+  const variable = {
+    incentive: row.incentive || 0,
+    medicalAllowance: row.medicalAllowance || 0,
+    otherEarnings: row.otherEarnings || 0,
+    messCharges: row.messCharges || 0,
+    otherDeductions: row.otherDeductions || 0,
+    loanRecovery,
+    providentFund: Boolean(pf),
+  };
+  if (row.gazettedHolidayHours !== null && row.gazettedHolidayHours !== undefined) {
+    variable.gazettedHolidayHours = row.gazettedHolidayHours;
+  }
+  return variable;
+}
+
+module.exports = { buildPeriod, annualisedIncomeTax, computePayslip, gatherAttendance, gatherVariable, WEEKDAYS };

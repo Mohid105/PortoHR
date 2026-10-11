@@ -33,6 +33,10 @@
     );
   }
 
+  function socialLabel() {
+    return (state.meta && state.meta.socialSecurity && state.meta.socialSecurity.label) || 'Social security';
+  }
+
   function canManage() {
     return state.user && state.user.role === 'hr_admin';
   }
@@ -431,8 +435,8 @@
       metaCell('Department', snapshot.department) +
       metaCell('Joined', formatDate(snapshot.dateOfJoining)) +
       metaCell('Pay period', monthLabel(payslip.month)) +
-      metaCell('Working days', String(payslip.period.workingDays)) +
-      metaCell('Paid days', String(payslip.period.employedWorkingDays)) +
+      metaCell('Payment days', String(attendance.paymentDays || payslip.period.employedWorkingDays)) +
+      metaCell('Month basis', rates.monthDivisor ? rates.monthDivisor + '-day month' : payslip.period.workingDays + ' working days') +
       '</dl>' +
 
       // --- earnings and deductions, side by side ---
@@ -442,6 +446,10 @@
       line('Basic salary', money(earnings.basic, c)) +
       allowanceLines +
       line('Overtime (' + formatHours(attendance.overtimeHours) + ' @ ' + money(rates.overtimeRate, c) + '/h)', money(earnings.overtimePay, c), { tone: earnings.overtimePay > 0 ? 'text-emerald-600' : 'text-slate-900' }) +
+      (earnings.gazettedHolidayPay ? line('Salary in lieu of gazetted holidays (' + formatHours(attendance.gazettedHolidayHours) + ')', money(earnings.gazettedHolidayPay, c), { tone: 'text-emerald-600' }) : '') +
+      (earnings.medicalAllowance ? line('Medical allowance', money(earnings.medicalAllowance, c)) : '') +
+      (earnings.incentive ? line('Incentive', money(earnings.incentive, c)) : '') +
+      (earnings.otherEarnings ? line('Other earnings', money(earnings.otherEarnings, c)) : '') +
       line('Gross earnings', money(earnings.gross, c), { strong: true }) +
       '</section>' +
 
@@ -450,8 +458,13 @@
       line('Unpaid absence (' + attendance.absentDays + ' day' + (attendance.absentDays === 1 ? '' : 's') + ')', money(deductions.absence, c), { tone: deductions.absence > 0 ? 'text-red-600' : 'text-slate-900' }) +
       line('Leave without pay (' + (attendance.lwpDays || 0) + ' day' + (attendance.lwpDays === 1 ? '' : 's') + ')', money(deductions.lwp || 0, c), { tone: (deductions.lwp || 0) > 0 ? 'text-red-600' : 'text-slate-900' }) +
       line('Short days (' + formatHours(attendance.shortfallHours) + ')', money(deductions.shortDay, c), { tone: deductions.shortDay > 0 ? 'text-red-600' : 'text-slate-900' }) +
-      line('Social security (' + percent(deductions.socialSecurityRate) + ')', money(deductions.socialSecurity, c)) +
+      (deductions.latePenalty ? line('Late arrivals (' + (attendance.latePenaltyDays || 0) + ' day penalty)', money(deductions.latePenalty, c), { tone: 'text-red-600' }) : '') +
+      line(socialLabel() + ' (' + percent(deductions.socialSecurityRate) + ')', money(deductions.socialSecurity, c)) +
+      (deductions.providentFund ? line('Provident fund (employee)', money(deductions.providentFund, c)) : '') +
       line('Income tax', money(deductions.incomeTax, c)) +
+      (deductions.loanRecovery ? line('Loan / advance recovery', money(deductions.loanRecovery, c)) : '') +
+      (deductions.messCharges ? line('Mess charges', money(deductions.messCharges, c)) : '') +
+      (deductions.otherDeductions ? line('Other deductions', money(deductions.otherDeductions, c)) : '') +
       line('Total deductions', money(deductions.total, c), { strong: true }) +
       '</section>' +
       '</div>' +
@@ -479,7 +492,8 @@
       '<section class="print-break-avoid">' +
       '<h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Rates applied</h3>' +
       line('Contracted gross', money(snapshot.contractedGross, c)) +
-      line('Per-day wage', money(rates.perDayWage, c)) +
+      line('Per-day wage' + (rates.monthDivisor ? ' (÷ ' + rates.monthDivisor + ')' : ''), money(rates.perDayWage, c)) +
+      line('Adjusted gross (after absences)', money(earnings.adjustedGross, c)) +
       line('Hourly rate (' + rates.hoursPerDay + 'h day)', money(rates.hourlyRate, c)) +
       line('Overtime rate (×' + rates.overtimeMultiplier + ')', money(rates.overtimeRate, c)) +
       '</section>' +
@@ -488,14 +502,16 @@
       // --- tax workings ---
       '<section class="print-break-avoid mt-8 rounded-lg border border-slate-200 bg-slate-50 p-5">' +
       '<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">How the income tax was calculated</h3>' +
-      '<p class="mt-1.5 text-xs text-slate-500">Taxable pay of ' + escapeHtml(money(payslip.taxableGross - deductions.socialSecurity, c)) +
-      ' annualises to ' + escapeHtml(money(payslip.incomeTaxDetail.annualTaxable, c)) +
+      '<p class="mt-1.5 text-xs text-slate-500">Taxable pay of ' + escapeHtml(money(payslip.incomeTaxDetail.annualTaxable / 12, c)) +
+      ' a month annualises to ' + escapeHtml(money(payslip.incomeTaxDetail.annualTaxable, c)) +
       '. Tax of ' + escapeHtml(money(payslip.incomeTaxDetail.annualTax, c)) + ' a year is charged one twelfth at a time.</p>' +
       '<table class="mt-3 w-full text-xs"><thead><tr class="text-left text-slate-400">' +
       '<th class="pb-1 pr-4 font-medium">Annual band</th><th class="pb-1 pr-4 text-right font-medium">Rate</th>' +
       '<th class="pb-1 pr-4 text-right font-medium">Taxable</th><th class="pb-1 text-right font-medium">Tax</th>' +
       '</tr></thead><tbody>' + taxBands + '</tbody></table>' +
       '</section>' +
+
+      '<section id="payslip-leave" class="print-break-avoid mt-8 hidden"></section>' +
 
       (warnings ? '<div class="mt-8">' + warnings + '</div>' : '') +
 
@@ -507,6 +523,27 @@
     );
   }
 
+  /** Leave balances at the foot of a payslip, as on a printed salary slip. */
+  async function loadPayslipLeave(payslip) {
+    try {
+      var year = Number(String(payslip.month).slice(0, 4));
+      var result = await api.get('/leave/balances?employee=' + encodeURIComponent(payslip.employee) + '&year=' + year);
+      var rows = (result.balances || []).filter(function (row) { return row.entitlementDays > 0 || row.takenDays > 0; });
+      if (!rows.length) return;
+      var host = el('payslip-leave');
+      if (!host) return;
+      host.innerHTML =
+        '<h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Leave balances (' + year + ')</h3>' +
+        '<div class="flex flex-wrap gap-x-8 gap-y-1 text-sm">' +
+        rows.map(function (row) {
+          return '<span class="text-slate-600">' + escapeHtml(row.label.replace(' leave', '')) + ' <b class="tabular-nums text-slate-900">' + Math.round(row.availableDays * 100) / 100 + '</b></span>';
+        }).join('') + '</div>';
+      host.classList.remove('hidden');
+    } catch (err) {
+      /* balances are a courtesy on the slip; the payslip stands without them */
+    }
+  }
+
   async function renderPayslip(id) {
     var view = el('view-payslip');
     view.innerHTML =
@@ -516,6 +553,7 @@
       var result = await api.get('/payroll/' + id);
       view.innerHTML = payslipHtml(result.payslip);
 
+      loadPayslipLeave(result.payslip);
       el('btn-back').addEventListener('click', function () {
         window.location.hash = '';
       });
@@ -551,10 +589,12 @@
   function setPayTab(tab) {
     state.tab = tab;
     var arrears = tab === 'arrears';
-    el('batch-tiles').classList.toggle('hidden', arrears);
-    el('panel-payslips').classList.toggle('hidden', arrears);
+    var payslips = tab === 'payslips';
+    el('batch-tiles').classList.toggle('hidden', !payslips);
+    el('panel-payslips').classList.toggle('hidden', !payslips);
     el('view-arrears').classList.toggle('hidden', !arrears);
-    if (canManage()) el('admin-controls').classList.toggle('hidden', arrears);
+    if (canManage()) el('admin-controls').classList.toggle('hidden', !payslips);
+    document.dispatchEvent(new CustomEvent('payroll:tab', { detail: { tab: tab } }));
     document.querySelectorAll('.pay-tab').forEach(function (button) {
       var active = button.getAttribute('data-pay-tab') === tab;
       button.classList.toggle('border-[#2054C9]', active);
@@ -834,6 +874,10 @@
       el('page-subtitle').textContent = 'Your payslips and any posted arrears, newest first.';
     }
 
+    if (canManage()) {
+      document.querySelectorAll('.pay-tab.hr-only').forEach(function (b) { b.classList.remove('hidden'); });
+    }
+    window.PortoHR.payroll = { money: money, toast: toast, escapeHtml: escapeHtml, canManage: canManage, previousMonth: previousMonth, monthLabel: monthLabel };
     wire();
     await loadPayslips();
     await loadArrears();

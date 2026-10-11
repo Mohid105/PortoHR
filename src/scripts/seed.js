@@ -2224,7 +2224,26 @@ async function seedEsign() {
   logger.info('Created Mohid e-sign packs (Code of Conduct signed, July addendum awaiting)');
 }
 
+async function seedCompany() {
+  const Announcement = require('../models/Announcement');
+  if (await Announcement.countDocuments()) return;
+  const hr = await User.findOne({ role: ROLES.HR_ADMIN });
+  const author = { author: hr && hr._id, authorName: hr ? `${hr.firstName} ${hr.lastName}` : 'HR' };
+  await Announcement.create([
+    { title: 'Welcome to PortoHR', body: 'Your people workspace is live. Check your profile, review your leave balance and read the policies waiting for your acknowledgement.', category: 'general', pinned: true, ...author },
+    { title: 'Updated remote-work policy', body: 'From next month, hybrid teams work from the office on Tuesday and Wednesday. Full details are in the Compliance module.', category: 'policy', ...author },
+    { title: 'Quarterly town hall', body: 'Join us on the last Friday of the month at 4 pm in the main hall (or on the video link) for company results and Q&A.', category: 'event', ...author },
+  ]);
+  logger.info('Seeded company announcements');
+}
+
 async function run(options = {}) {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'yes') {
+    throw new Error(
+      'Refusing to load demo data in production: it creates accounts with a published password. ' +
+        'Use "npm run create-admin" to make your first administrator instead.'
+    );
+  }
   await connectDatabase();
 
   for (const data of seedUsers) {
@@ -2264,6 +2283,8 @@ async function run(options = {}) {
   await seedAnalytics();
   await seedAdmin();
   await seedEsign();
+  await seedCompany();
+  await require('../services/shift.service').ensureDefaults();
 
   logger.info('Seed complete. Default password for all accounts: Portohr@123');
   if (!options.keepOpen) await disconnectDatabase();

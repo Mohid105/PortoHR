@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New employee · PortoHR</title>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <link rel="stylesheet" href="/css/employee-new.css?v=20261009-0452" />
+  </head>
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased" data-focus="1">
+    <main class="nw" id="nw">
+      <header class="nw-top">
+        <a id="nw-close" href="/core-hr.html" class="btn btn-secondary btn-sm" aria-label="Close and return to Core HR">&#10005; Close</a>
+        <div class="nw-title">
+          <h1>New employee</h1>
+          <p>Everything about the new hire in one place. Only the starred fields are required to save.</p>
+        </div>
+        <span class="nw-grow"></span>
+        <span id="nw-draft" class="nw-draft" aria-live="polite"></span>
+        <button id="nw-reset" type="button" class="btn btn-ghost">Start over</button>
+        <button id="nw-submit-top" type="submit" form="nw-form" class="btn btn-primary">Create employee</button>
+      </header>
+
+      <div id="nw-main" class="nw-body">
+        <nav class="nw-rail" aria-label="Form sections">
+          <ol id="nw-rail"></ol>
+          <div class="nw-meter">
+            <b id="nw-pct">0%</b>
+            <p id="nw-pct-note">of required fields done</p>
+            <div class="nw-bar"><i id="nw-bar"></i></div>
+          </div>
+        </nav>
+        <div id="nw-scroll" class="nw-scroll">
+          <form id="nw-form" class="nw-form" novalidate autocomplete="off"></form>
+        </div>
+      </div>
+
+      <div id="nw-done" class="nw-done hidden" aria-live="polite"></div>
+
+      <footer id="nw-foot" class="nw-foot">
+        <span id="nw-msg" class="msg">Your draft is kept in this browser tab, so a refresh will not lose it.</span>
+        <span class="nw-grow"></span>
+        <a href="/core-hr.html" class="btn btn-secondary">Cancel</a>
+        <button id="nw-submit" type="submit" form="nw-form" class="btn btn-primary">Create employee</button>
+      </footer>
+    </main>
+
+    <div id="toasts" class="fixed bottom-6 right-6 z-[70] space-y-2"></div>
+
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/employee-new.js?v=20261009-0452"></script>
+  </body>
+</html>

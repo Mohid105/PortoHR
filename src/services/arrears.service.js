@@ -6,7 +6,7 @@ const Payslip = require('../models/Payslip');
 const ArrearsAdjustment = require('../models/ArrearsAdjustment');
 const ApiError = require('../utils/ApiError');
 const { monthRange, currentMonth } = require('./attendance.service');
-const { buildPeriod, computePayslip, gatherAttendance } = require('./payroll.service');
+const { buildPeriod, computePayslip, gatherAttendance, gatherVariable } = require('./payroll.service');
 const { ARREARS_TRANSITIONS, ARREARS_STATUS_LABELS } = require('../config/payroll');
 
 const CLOSED = new Set(['finalised', 'paid']);
@@ -51,8 +51,9 @@ function present(doc) {
 
 async function runEngine(employee, range) {
   const attendance = await gatherAttendance(employee, range);
+  const variable = await gatherVariable(employee, range);
   const period = buildPeriod(employee, range, new Date());
-  return computePayslip({ employee, period, attendance });
+  return computePayslip({ employee, period, attendance, variable });
 }
 
 /**
@@ -77,6 +78,11 @@ async function simulate(user, body) {
 
   const scenario = applyWhatIf(employee, body.whatIf);
   const recomputed = await runEngine(scenario, range);
+  if (payslip.engineVersion && payslip.engineVersion !== recomputed.engineVersion) {
+    throw ApiError.conflict(
+      `The ${range.month} payslip was produced by payroll engine ${payslip.engineVersion} and the current engine is ${recomputed.engineVersion}, so the difference would mix rule changes with real changes. Raise arrears manually for that month.`
+    );
+  }
 
   const originalGross = payslip.earnings.gross;
   const originalNet = payslip.netPay;

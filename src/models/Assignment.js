@@ -1,7 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { DEPARTMENTS, SHIFT_TYPES, WEEKDAYS, CURRENCIES, LOCATIONS } = require('../config/hr');
+const { WEEKDAYS, CURRENCIES } = require('../config/hr');
 const { ASSIGNMENT_STATUSES } = require('../config/workforce');
 const { PERSONNEL_EVENTS, ORG_ROLES } = require('../config/org');
 
@@ -63,19 +63,16 @@ const assignmentSchema = new mongoose.Schema(
     department: {
       type: String,
       required: [true, 'Department is required'],
-      enum: { values: DEPARTMENTS, message: '{VALUE} is not a recognised department' },
+      trim: true,
+      maxlength: 80,
     },
     team: { type: String, trim: true, default: '', maxlength: 60 },
     orgRole: { type: String, enum: [...ORG_ROLES, ''], default: '' },
     gradeCode: { type: String, trim: true, default: '' },
-    location: { type: String, enum: [...LOCATIONS, ''], default: '' },
+    location: { type: String, trim: true, maxlength: 80, default: '' },
     costCenter: { type: String, trim: true, default: '' },
     reportsTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', default: null },
-    shiftType: {
-      type: String,
-      enum: { values: SHIFT_TYPES, message: '{VALUE} is not a recognised shift' },
-      default: 'general',
-    },
+    shiftType: { type: String, trim: true, default: 'general', maxlength: 24 },
     restDays: {
       type: [{ type: String, enum: WEEKDAYS }],
       default: ['saturday', 'sunday'],

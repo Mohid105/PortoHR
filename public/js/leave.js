@@ -310,6 +310,19 @@
     onTypeChange();
   }
 
+  /** Only offer the leave types this person's group is entitled to take. */
+  function restrictTypes() {
+    var allowed = state.balances.map(function (row) { return row.code; });
+    if (!allowed.length) return;
+    var current = el('leaveType').value;
+    el('leaveType').innerHTML = ((state.meta && state.meta.types) || [])
+      .filter(function (type) { return allowed.indexOf(type.value) !== -1; })
+      .map(function (type) { return '<option value="' + type.value + '">' + escapeHtml(type.label) + '</option>'; })
+      .join('');
+    if (allowed.indexOf(current) !== -1) el('leaveType').value = current;
+    onTypeChange();
+  }
+
   function onTypeChange() {
     var code = el('leaveType').value;
     var match = ((state.meta && state.meta.types) || []).filter(function (type) {
@@ -330,6 +343,7 @@
       api.get('/leave?scope=queue'),
     ]);
     state.balances = balances.balances || [];
+    restrictTypes();
     state.mine = mine.requests || [];
     state.queue = queue.requests || [];
     state.canApprove = Boolean(queue.canApprove);
@@ -355,6 +369,7 @@
         fromDate: el('fromDate').value,
         toDate: el('toDate').value,
         halfDay: el('halfDay').value,
+        hours: el('hours').value || undefined,
         reason: el('reason').value,
       });
       toast(payload.message || 'Leave submitted');
@@ -437,6 +452,7 @@
     state.meta = (await api.get('/leave/meta')).meta;
     fillForm();
     await loadLists();
+    if (/[?&]apply=1/.test(window.location.search)) setApplyOpen(true);
   }
 
   init().catch(function (err) {

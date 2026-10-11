@@ -6,67 +6,68 @@
     <title>Sign in · PortoHR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <style>
+      .login-art {
+        background:
+          radial-gradient(520px 320px at 88% -8%, rgb(233 162 59 / .45), transparent 62%),
+          radial-gradient(460px 380px at 10% 112%, rgb(var(--brand-rgb) / .38), transparent 60%),
+          linear-gradient(150deg, var(--brand-a) 0%, var(--brand-b) 38%, var(--brand-c) 100%);
+      }
+      .ring-deco { position: absolute; border-radius: 50%; border: 1.5px solid rgb(255 255 255 / .13); pointer-events: none; }
+      .glass { background: rgb(255 255 255 / .12); border: 1px solid rgb(255 255 255 / .2); backdrop-filter: blur(8px); border-radius: 1.4rem; }
+      .field { width: 100%; margin-top: .4rem; padding: .8rem 1rem; font-size: .9rem; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 1rem; outline: none; transition: border-color .15s, box-shadow .15s; }
+      .field:focus { border-color: var(--brand-b); box-shadow: var(--ring); }
+    </style>
   </head>
   <body class="h-full bg-slate-50 font-sans text-slate-900 antialiased">
     <div class="flex min-h-full">
       <!-- Brand panel -->
-      <div class="relative hidden w-1/2 flex-col justify-between bg-slate-900 p-12 lg:flex">
-        <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white font-bold text-slate-900">
-            P
-          </div>
-          <span class="text-lg font-semibold tracking-tight text-white">PortoHR</span>
+      <div class="login-art relative hidden w-[46%] flex-col justify-between overflow-hidden p-12 text-white lg:flex">
+        <span class="ring-deco" style="width:30rem;height:30rem;right:-9rem;top:-11rem"></span>
+        <span class="ring-deco" style="width:18rem;height:18rem;left:-5rem;bottom:-7rem"></span>
+
+        <div class="relative flex items-center gap-3">
+          <span class="relative grid h-11 w-11 place-items-center rounded-2xl bg-white/15 font-display text-xl font-semibold ring-1 ring-white/25">P<i class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full" style="background:#e9a23b"></i></span>
+          <span class="font-display text-2xl font-semibold tracking-tight">PortoHR</span>
         </div>
 
-        <div class="max-w-md">
-          <h1 class="text-3xl font-semibold leading-tight tracking-tight text-white">
-            One workspace for your entire people operation.
+        <div class="relative max-w-md">
+          <p class="text-xs font-bold uppercase tracking-[.16em] text-white/70">People &amp; payroll, together</p>
+          <h1 class="mt-3 font-display text-[2.7rem] font-medium leading-[1.08] tracking-tight">
+            Run your whole company from <em class="italic" style="color:#ffd58f">one calm place.</em>
           </h1>
-          <p class="mt-4 text-sm leading-relaxed text-slate-400">
-            Core HR, attendance, leave, payroll, talent, learning, benefits, compliance, employee relations, e-signature, assets, analytics, administration, loans, compensation and performance — governed by a single
-            role-based permission model.
+          <p class="mt-5 text-sm leading-relaxed text-white/75">
+            From hiring and attendance to payroll, leave and final settlements: one record per person,
+            clear approvals, and a workspace that stays out of the way.
           </p>
-          <dl class="mt-10 grid grid-cols-3 gap-6 border-t border-slate-800 pt-8">
-            <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-500">Modules</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">16</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-500">Roles</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">3</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-500">Uptime</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">99.9%</dd>
-            </div>
-          </dl>
+
+          <div class="glass mt-9 grid grid-cols-3 gap-4 p-5">
+            <div><p class="font-display text-2xl font-medium">16</p><p class="mt-0.5 text-[11px] uppercase tracking-wider text-white/65">Modules</p></div>
+            <div><p class="font-display text-2xl font-medium">3</p><p class="mt-0.5 text-[11px] uppercase tracking-wider text-white/65">Role levels</p></div>
+            <div><p class="font-display text-2xl font-medium">1</p><p class="mt-0.5 text-[11px] uppercase tracking-wider text-white/65">Source of truth</p></div>
+          </div>
         </div>
 
-        <p class="text-xs text-slate-500">© <span id="year"></span> PortoHR. All rights reserved.</p>
+        <p class="relative text-xs text-white/55">© <span id="year"></span> PortoHR. All rights reserved.</p>
       </div>
 
       <!-- Login form -->
-      <div class="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+      <div class="flex w-full items-center justify-center px-6 py-12 lg:w-[54%]">
         <div class="w-full max-w-sm">
-          <div class="mb-8 flex items-center gap-3 lg:hidden">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 font-bold text-white">
-              P
-            </div>
-            <span class="text-lg font-semibold tracking-tight">PortoHR</span>
+          <div class="mb-9 flex items-center gap-3 lg:hidden">
+            <span class="grid h-10 w-10 place-items-center rounded-2xl font-display text-lg font-semibold text-white" style="background:linear-gradient(135deg,var(--brand-a),var(--brand-b) 60%,var(--brand-c))">P</span>
+            <span class="font-display text-xl font-semibold tracking-tight">PortoHR</span>
           </div>
 
-          <h2 class="text-2xl font-semibold tracking-tight">Sign in to your workspace</h2>
-          <p class="mt-2 text-sm text-slate-500">Use the credentials issued by your HR administrator.</p>
+          <h2 class="font-display text-[2rem] font-medium leading-tight tracking-tight">Welcome back</h2>
+          <p class="mt-2 text-sm text-slate-500">Sign in with the credentials your HR administrator issued.</p>
 
           <div
             id="login-error"
-            class="mt-6 hidden items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700"
+            class="mt-6 hidden items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             role="alert"
           >
             <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -75,42 +76,24 @@
             <span id="login-error-text"></span>
           </div>
 
-          <form id="login-form" class="mt-6 space-y-5" novalidate>
+          <form id="login-form" class="mt-7 space-y-5" novalidate>
             <div>
-              <label for="email" class="block text-sm font-medium text-slate-700">Work email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autocomplete="username"
-                required
-                placeholder="you@company.com"
-                class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-              />
+              <label for="email" class="block text-sm font-semibold text-slate-700">Work email</label>
+              <input id="email" name="email" type="email" autocomplete="username" required placeholder="you@company.com" class="field" />
             </div>
 
             <div>
               <div class="flex items-center justify-between">
-                <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
-                <button type="button" id="toggle-password" class="text-xs font-medium text-slate-500 hover:text-slate-900">
-                  Show
-                </button>
+                <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
+                <button type="button" id="toggle-password" class="text-xs font-semibold text-slate-500 hover:text-slate-900">Show</button>
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                required
-                placeholder="••••••••"
-                class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-              />
+              <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••" class="field" />
             </div>
 
             <button
               type="submit"
               id="login-submit"
-              class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              class="flex w-full items-center justify-center gap-2 rounded-full bg-[#2054C9] px-4 py-3.5 text-sm font-bold text-white transition focus:outline-none focus:ring-2 focus:ring-[#2054C9] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <svg id="login-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -120,26 +103,26 @@
             </button>
           </form>
 
-          <div class="mt-8 rounded-lg border border-slate-200 bg-white p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Demo accounts</p>
-            <div class="mt-3 space-y-1.5 text-xs text-slate-600">
-              <button type="button" data-demo-email="hr.admin@portohr.test" class="block w-full text-left hover:text-slate-900">
-                <span class="font-medium">HR Admin</span> · hr.admin@portohr.test
+          <div class="mt-9 rounded-3xl border border-slate-200 bg-white p-5">
+            <p class="text-[11px] font-bold uppercase tracking-[.12em] text-slate-400">Demo accounts</p>
+            <div class="mt-3 space-y-1 text-xs text-slate-600">
+              <button type="button" data-demo-email="hr.admin@portohr.test" class="block w-full rounded-xl px-2 py-1.5 text-left hover:bg-slate-50">
+                <span class="font-semibold text-slate-800">HR Admin</span> · hr.admin@portohr.test
               </button>
-              <button type="button" data-demo-email="manager@portohr.test" class="block w-full text-left hover:text-slate-900">
-                <span class="font-medium">Manager</span> · manager@portohr.test
+              <button type="button" data-demo-email="manager@portohr.test" class="block w-full rounded-xl px-2 py-1.5 text-left hover:bg-slate-50">
+                <span class="font-semibold text-slate-800">Manager</span> · manager@portohr.test
               </button>
-              <button type="button" data-demo-email="employee@portohr.test" class="block w-full text-left hover:text-slate-900">
-                <span class="font-medium">Employee</span> · employee@portohr.test
+              <button type="button" data-demo-email="employee@portohr.test" class="block w-full rounded-xl px-2 py-1.5 text-left hover:bg-slate-50">
+                <span class="font-semibold text-slate-800">Employee</span> · employee@portohr.test
               </button>
-              <p class="pt-1 text-slate-400">Password for all: Portohr@123 — run <code>npm run seed</code> first.</p>
+              <p class="px-2 pt-1 text-slate-400">Password for all: Portohr@123 — run <code>npm run seed</code> first.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/login.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/login.js?v=20261009-0452"></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { EMPLOYMENT_TYPES, EMPLOYMENT_STATUSES, LOCATIONS } = require('../config/hr');
+const { EMPLOYMENT_TYPES, EMPLOYMENT_STATUSES } = require('../config/hr');
 const { EMPLOYEE_CATEGORIES, PAY_GROUPS, SEPARATION_TYPES } = require('../config/org');
 
 const json = {
@@ -46,7 +46,7 @@ const employmentSchema = new mongoose.Schema(
     phone: { type: String, trim: true, default: '', maxlength: [30, 'Phone number cannot exceed 30 characters'] },
     address: { type: String, trim: true, default: '', maxlength: 200 },
     legalEntity: { type: String, trim: true, default: 'PortoHR (Pvt) Ltd' },
-    location: { type: String, enum: [...LOCATIONS, ''], default: 'Karachi HQ' },
+    location: { type: String, trim: true, maxlength: 80, default: 'Karachi HQ' },
     employeeCategory: { type: String, enum: [...EMPLOYEE_CATEGORIES, ''], default: 'non_executive' },
     payGroup: { type: String, enum: [...PAY_GROUPS, ''], default: 'monthly_intl' },
     employmentType: { type: String, enum: EMPLOYMENT_TYPES, default: 'full_time' },

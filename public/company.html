@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Company Hub · PortoHR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <style>
+      .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+      .tree ul { margin-left: 1.15rem; padding-left: 1.1rem; border-left: 1px solid var(--border-strong); }
+      .tree li { position: relative; padding: .22rem 0; }
+      .tree ul > li::before { content: ''; position: absolute; left: -1.1rem; top: 1.25rem; width: .9rem; border-top: 1px solid var(--border-strong); }
+      .node { display: inline-flex; align-items: center; gap: .65rem; padding: .45rem .75rem .45rem .5rem; background: var(--surface); border: 1px solid var(--border); border-radius: .75rem; box-shadow: var(--shadow-sm); min-width: 15rem; text-align: left; }
+      .node:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+      .node b { display: block; font-size: .82rem; font-weight: 600; line-height: 1.2; }
+      .node i { display: block; font-style: normal; font-size: .72rem; color: var(--muted); }
+      .node .count { margin-left: auto; font-size: .68rem; font-weight: 600; color: var(--muted); background: var(--surface-hover); border-radius: 999px; padding: .1rem .5rem; }
+      .tree .toggle { cursor: pointer; }
+      .tree li.is-collapsed > ul { display: none; }
+      .chk { width: 1.15rem; height: 1.15rem; accent-color: var(--primary); cursor: pointer; }
+      .ann { padding: 1.1rem 1.25rem; }
+      .ann + .ann { border-top: 1px solid var(--border); }
+      .ann h3 { margin: 0; font-size: .95rem; font-weight: 650; letter-spacing: -.01em; }
+      .ann p.body { margin: .4rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--text-2); white-space: pre-wrap; }
+      .stat { font-variant-numeric: tabular-nums; }
+    </style>
+  </head>
+  <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
+    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Company Hub</h1>
+            <p class="mt-1 text-sm text-slate-500">News from HR, who is who, upcoming milestones, and how the company is organised.</p>
+          </div>
+          <button id="ann-new" type="button" class="btn btn-primary hidden">New announcement</button>
+        </div>
+
+        <div id="co-tabs" class="mt-8 flex flex-wrap gap-2 border-b border-slate-200">
+          <button type="button" data-tab="news" class="tab-btn -mb-px border-b-2 border-[#2054C9] px-3 py-2 text-sm font-semibold text-slate-900">Announcements</button>
+          <button type="button" data-tab="people" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">People directory</button>
+          <button type="button" data-tab="chart" class="tab-btn -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">Org chart</button>
+          <button type="button" data-tab="onboarding" id="onboarding-tab" class="tab-btn hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">
+            Onboarding <span id="onboarding-count" class="ml-1 hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-800">0</span>
+          </button>
+          <button type="button" data-tab="exit" id="exit-tab" class="tab-btn hidden -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500">
+            Offboarding <span id="exit-count" class="ml-1 hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-800">0</span>
+          </button>
+        </div>
+
+        <section id="tab-news" class="mt-6 grid gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <div id="news-list" class="card overflow-hidden"></div>
+          </div>
+          <div id="moments" class="space-y-4"></div>
+        </section>
+
+        <section id="tab-people" class="mt-6 hidden">
+          <div class="mb-4 flex flex-wrap items-center gap-3">
+            <input id="dir-q" type="search" placeholder="Search by name, code, role or email" class="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+            <select id="dir-dept" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">All departments</option></select>
+            <span id="dir-count" class="text-xs text-slate-500"></span>
+            <button id="dir-export" type="button" class="btn btn-secondary ml-auto">Export CSV</button>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+            <div class="overflow-x-auto"><table class="min-w-full text-sm">
+              <thead><tr>
+                <th scope="col" class="px-6 py-3.5 text-left">Employee</th>
+                <th scope="col" class="px-6 py-3.5 text-left">Department</th>
+                <th scope="col" class="px-6 py-3.5 text-left">Contact</th>
+                <th scope="col" class="px-6 py-3.5 text-left">Location</th>
+                <th scope="col" class="px-6 py-3.5 text-left">Status</th>
+              </tr></thead>
+              <tbody id="dir-body"></tbody>
+            </table></div>
+          </div>
+        </section>
+
+        <section id="tab-chart" class="mt-6 hidden">
+          <div class="mb-4 flex flex-wrap items-center gap-2">
+            <button id="chart-expand" type="button" class="btn btn-secondary btn-sm">Expand all</button>
+            <button id="chart-collapse" type="button" class="btn btn-secondary btn-sm">Collapse all</button>
+            <span id="chart-total" class="ml-2 text-xs text-slate-500"></span>
+          </div>
+          <div id="chart" class="card card-pad overflow-x-auto"></div>
+        </section>
+
+        <section id="tab-onboarding" class="mt-6 hidden space-y-4">
+          <p class="text-sm text-slate-500">
+            A starter checklist is created when someone is hired through the new-employee form. Tick each step as it is finished; steps owned by HR, IT or Finance can only be ticked by HR.
+          </p>
+          <div id="onboarding-list" class="space-y-4"></div>
+        </section>
+
+        <section id="tab-exit" class="mt-6 hidden space-y-4">
+          <p class="text-sm text-slate-500">
+            Clearance checklists are created automatically when someone is separated in Core HR. Completing
+            <em>Revoke system and email access</em> also deactivates that person's PortoHR login.
+          </p>
+          <div id="exit-list" class="space-y-4"></div>
+        </section>
+      </div>
+    </main>
+
+    <div id="ann-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <form id="ann-form" class="modal-box wide" novalidate>
+        <h2 id="ann-title-h">New announcement</h2>
+        <div id="ann-error" class="modal-error hidden" role="alert"></div>
+        <label>Headline<input id="ann-title" maxlength="140" required /></label>
+        <label>Message<textarea id="ann-body" rows="5" maxlength="4000" required></textarea></label>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label>Category
+            <select id="ann-category">
+              <option value="general">General</option>
+              <option value="policy">Policy</option>
+              <option value="event">Event</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </label>
+          <label>Hide after (optional)<input id="ann-expires" type="date" /></label>
+        </div>
+        <label style="display:flex;align-items:center;gap:.5rem"><input id="ann-pinned" type="checkbox" class="chk" style="padding:0" /> Pin to the top</label>
+        <div class="modal-actions">
+          <button type="button" id="ann-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/company.js?v=20261009-0452"></script>
+  </body>
+</html>

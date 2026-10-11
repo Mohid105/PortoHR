@@ -10,10 +10,13 @@ const router = express.Router();
 router.use(authenticate, requireModule(MODULES.CORE_HR));
 
 router.get('/units', controller.listUnits);
+router.get('/departments', controller.listDepartments);
 router.get('/grades', controller.listGrades);
 router.get('/jobs', controller.listJobs);
 router.get('/positions', controller.listPositions);
 
+router.post('/departments', authorize(ROLES.HR_ADMIN), controller.createDepartment);
+router.patch('/departments/:id', authorize(ROLES.HR_ADMIN), controller.updateDepartment);
 router.post('/units', authorize(ROLES.HR_ADMIN), controller.createUnit);
 router.post('/grades', authorize(ROLES.HR_ADMIN), controller.createGrade);
 router.post('/jobs', authorize(ROLES.HR_ADMIN), controller.createJob);

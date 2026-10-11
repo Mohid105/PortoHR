@@ -27,6 +27,10 @@ function normalize(err) {
     return ApiError.conflict(`A record with that ${field} already exists`);
   }
 
+  if (err.type === 'entity.too.large') {
+    return new ApiError(413, 'That upload is too large');
+  }
+
   if (err.type === 'entity.parse.failed') {
     return ApiError.badRequest('Request body is not valid JSON');
   }

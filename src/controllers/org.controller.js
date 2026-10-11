@@ -37,6 +37,22 @@ const createUnit = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, unit: org.presentUnit(unit) });
 });
 
+const listDepartments = asyncHandler(async (_req, res) => {
+  res.json({ success: true, ...(await org.listDepartments()) });
+});
+
+const createDepartment = asyncHandler(async (req, res) => {
+  const unit = await org.createDepartment(req.body || {});
+  await audit.record(req, { action: 'department_create', objectType: 'OrgUnit', objectId: String(unit._id), summary: `Added department ${unit.name}` });
+  res.status(201).json({ success: true, department: org.presentUnit(unit) });
+});
+
+const updateDepartment = asyncHandler(async (req, res) => {
+  const unit = await org.updateDepartment(req.params.id, req.body || {});
+  await audit.record(req, { action: 'department_update', objectType: 'OrgUnit', objectId: String(unit._id), summary: `${unit.name} (${unit.status})` });
+  res.json({ success: true, department: org.presentUnit(unit) });
+});
+
 const listGrades = asyncHandler(async (_req, res) => {
   await org.ensureGrades();
   const grades = await Grade.find().sort({ rank: -1 });
@@ -99,6 +115,9 @@ const createPosition = asyncHandler(async (req, res) => {
 module.exports = {
   listUnits,
   createUnit,
+  listDepartments,
+  createDepartment,
+  updateDepartment,
   listGrades,
   createGrade,
   listJobs,

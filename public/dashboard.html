@@ -6,50 +6,101 @@
     <title>Dashboard · PortoHR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="/css/tailwind.css?v=20261009-0452" />
+    <link id="portohr-theme-css" rel="stylesheet" href="/css/theme.css?v=20261009-0452" />
+    <script src="/js/theme-early.js?v=20261009-0452"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=20261009-0452" />
   </head>
   <!-- `invisible` is removed by shell.js once the session is verified, so an
        unauthenticated visitor never sees the chrome before being redirected. -->
   <body class="invisible h-full bg-slate-50 font-sans text-slate-900 antialiased">
-    <!-- Content -->
-    <main class="px-4 pb-12 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
+    <main class="px-4 pb-14 pt-24 sm:px-6 lg:pl-72 lg:pr-8">
       <div class="mx-auto max-w-7xl">
-        <div class="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
-            <p class="mt-1 text-sm text-slate-500">
-              Welcome back, <span id="greeting-name" class="font-medium text-slate-700">…</span>.
-            </p>
+        <div class="dgrid">
+          <!-- Hero -->
+          <section id="hero" class="hero span-8" aria-label="Welcome">
+            <p id="today-label" class="eyebrow">&nbsp;</p>
+            <h1><span id="greeting-prefix">Welcome back</span>, <em id="greeting-name">…</em></h1>
+            <p id="role-line" class="role"></p>
+            <div id="hero-chips" class="hero-chips"></div>
+            <div id="hero-stats" class="hero-stats"></div>
+          </section>
+
+          <!-- Today / clock -->
+          <section id="clock-card" class="dcard span-4" aria-label="Today">
+            <div class="dhead"><span class="dico" id="clock-ico"></span><h2>Today</h2><span id="clock-status" class="pill ml-auto">—</span></div>
+            <div id="clock-time" class="clock-time">--:--</div>
+            <div id="clock-date" class="clock-date"></div>
+            <div id="clock-meta" class="mt-3 text-sm text-slate-500"></div>
+            <button id="clock-btn" type="button" class="clock-btn hidden"></button>
+          </section>
+
+          <!-- Workforce pulse (HR and managers) -->
+          <section id="pulse-card" class="dcard span-12 hidden" aria-label="Workforce at a glance">
+            <div class="dhead"><span class="dico" id="pulse-ico"></span><h2 id="pulse-title">Workforce at a glance</h2><span id="pulse-asof" class="ml-auto text-xs text-slate-400"></span></div>
+            <div id="pulse-body"><div class="skeleton" style="width:100%;height:9rem"></div></div>
+          </section>
+
+          <!-- Leave -->
+          <section id="leave-card" class="dcard span-4" aria-label="Leave balance">
+            <div class="dhead"><span class="dico" id="leave-ico"></span><h2>Time off</h2><a href="/leave.html" class="see-all">See all</a></div>
+            <div id="leave-body"><div class="skeleton" style="width:100%;height:8rem"></div></div>
+          </section>
+
+          <!-- Approvals -->
+          <section id="approvals-card" class="dcard tint-apricot span-4" aria-label="Approvals">
+            <div class="dhead"><span class="dico" id="approvals-ico"></span><h2>Needs your approval</h2></div>
+            <div id="approvals-body"><div class="skeleton" style="width:60%;height:3rem"></div></div>
+          </section>
+
+          <!-- Payslip -->
+          <section id="payslip-card" class="dcard tint-sea span-4" aria-label="Latest payslip">
+            <div class="dhead"><span class="dico" id="payslip-ico"></span><h2>Latest payslip</h2><a href="/payroll.html" class="see-all">See all</a></div>
+            <div id="payslip-body"><div class="skeleton" style="width:70%;height:3rem"></div></div>
+          </section>
+
+          <!-- Calendar -->
+          <section id="calendar-card" class="dcard span-7" aria-label="Schedule">
+            <div class="dhead"><span class="dico" id="cal-ico"></span><h2>Schedule</h2><span id="cal-month" class="ml-auto text-sm font-semibold text-slate-500"></span></div>
+            <div class="week">
+              <button id="week-prev" type="button" class="week-nav" aria-label="Previous week">‹</button>
+              <div id="week-days" class="week-days"></div>
+              <button id="week-next" type="button" class="week-nav" aria-label="Next week">›</button>
+            </div>
+            <div id="day-events" class="mt-4"></div>
+          </section>
+
+          <!-- News -->
+          <section id="news-card" class="dcard span-5" aria-label="Company news">
+            <div class="dhead"><span class="dico" id="news-ico"></span><h2>From the company</h2><a href="/company.html" class="see-all">See all</a></div>
+            <div id="news-body"><div class="skeleton" style="width:100%;height:6rem"></div></div>
+          </section>
+
+          <!-- Moments -->
+          <section id="moments-card" class="dcard span-7" aria-label="People moments">
+            <div class="dhead"><span class="dico" id="moments-ico"></span><h2>Around the company</h2><a href="/company.html#people" class="see-all">Directory</a></div>
+            <div id="moments-body"></div>
+          </section>
+
+          <!-- Learning -->
+          <section id="learning-card" class="dcard tint-mint span-5" aria-label="Learning">
+            <div class="dhead"><span class="dico" id="learning-ico"></span><h2>Learning</h2><a href="/lms.html" class="see-all">Open</a></div>
+            <div id="learning-body"><div class="skeleton" style="width:60%;height:3rem"></div></div>
+          </section>
+        </div>
+
+        <section aria-label="Workspace" class="mt-10">
+          <div class="flex items-baseline justify-between">
+            <h2 class="font-display text-2xl font-semibold tracking-tight">Your workspace</h2>
+            <span class="text-xs text-slate-400">Press <kbd class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-semibold">Ctrl K</kbd> to jump anywhere</span>
           </div>
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-            <span id="api-status">Checking API…</span>
-          </span>
-        </div>
-
-        <div id="ess-widgets" class="mt-8 grid gap-4 lg:grid-cols-3"></div>
-
-        <div id="module-cards" class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <!-- one card per module the current role can reach -->
-        </div>
-
-        <div class="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <h2 class="text-sm font-semibold text-slate-900">Self-service hub</h2>
-          <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
-            Profile, leave, attendance, payslips and approvals live in the modules above. Sensitive
-            changes still route through maker-checker in Core HR.
-          </p>
-        </div>
+          <div id="module-cards"></div>
+        </section>
       </div>
     </main>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/shell.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="/js/api.js?v=20261009-0452"></script>
+    <script src="/js/shell.js?v=20261009-0452"></script>
+    <script src="/js/dashboard.js?v=20261009-0452"></script>
   </body>
 </html>

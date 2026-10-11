@@ -3,6 +3,7 @@
 const Assignment = require('../models/Assignment');
 const LeaveRequest = require('../models/LeaveRequest');
 const Loan = require('../models/Loan');
+const AttendanceRequest = require('../models/AttendanceRequest');
 const CompensationRequest = require('../models/CompensationRequest');
 const BankAccount = require('../models/BankAccount');
 const StatutoryEnrollment = require('../models/StatutoryEnrollment');
@@ -47,12 +48,13 @@ const inbox = asyncHandler(async (req, res) => {
   }
   const viewer = await resolveViewerEmployee(req.user);
 
-  const [assignments, leave, loans, claims, banks, statutory, requisitions, offers, enrollments, benefitChanges] = await Promise.all([
+  const [assignments, leave, attendanceRequests, loans, claims, banks, statutory, requisitions, offers, enrollments, benefitChanges] = await Promise.all([
     Assignment.find(Object.assign({ status: 'pending' }, queue))
       .populate('employee', 'firstName lastName employeeCode designation department')
       .sort({ createdAt: 1 })
       .limit(50),
     LeaveRequest.find(Object.assign({ status: 'pending' }, queue)).sort({ createdAt: 1 }).limit(50),
+    AttendanceRequest.find(Object.assign({ status: 'pending' }, queue)).sort({ createdAt: 1 }).limit(50),
     Loan.find(Object.assign({ status: 'pending' }, queue)).sort({ createdAt: 1 }).limit(50),
     CompensationRequest.find(Object.assign({ status: 'pending' }, queue)).sort({ createdAt: 1 }).limit(50),
     BankAccount.find(Object.assign({ status: 'pending' }, queue))
@@ -117,6 +119,21 @@ const inbox = asyncHandler(async (req, res) => {
       detail: `${from} → ${to} · ${row.days} day(s)`,
       href: '/leave.html',
       decidePath: `/leave/${asId(row)}/status`,
+      submittedAt: row.createdAt,
+      snapshot: row.snapshot,
+    });
+  });
+
+  attendanceRequests.forEach((row) => {
+    const times = [row.timeIn, row.timeOut].filter(Boolean).join(' → ');
+    items.push({
+      id: asId(row),
+      module: 'attendance',
+      kind: 'attendance',
+      title: `${row.snapshot.fullName} · ${require('../services/attendanceAdmin.service').TYPE_LABELS[row.type] || row.type}`,
+      detail: `${row.date.toISOString().slice(0, 10)}${times ? ` · ${times}` : ''}`,
+      href: '/attendance.html#requests',
+      decidePath: `/attendance/requests/${asId(row)}/status`,
       submittedAt: row.createdAt,
       snapshot: row.snapshot,
     });
